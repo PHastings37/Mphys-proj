@@ -236,20 +236,22 @@ class DICOMSorter(object):
 
         # check for valid path - abort program to avoid overwrite
         path = self.pathFromDatasetPattern(ds, safe=(not sorter.options['unsafe']))
+
+        
         if os.path.exists(path):
             print('\nSource file: %s' % file)
             print('Target file: %s' % path)
             print('\nTarget file already exists - pattern is probably not unique')
             if not self.options['keepGoing']:
-                print('Aborting to avoid data loss.')
-                sys.exit(-3)
+               print('Aborting to avoid data loss.')
+               sys.exit(-3)
 
-        # make new directories to hold file if needed
+        #make new directories to hold file if needed
         targetDir = os.path.dirname(path)
         targetFileName = os.path.basename(path)
         if not os.path.exists(targetDir):
             os.makedirs(targetDir)
-
+        
         try:
             if self.options['symlink']:
                 os.symlink(file, path)
