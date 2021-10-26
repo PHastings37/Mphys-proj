@@ -22,10 +22,10 @@ counter = 0 #Used to check that the code is running
 
 """Defining the start of the path name to where my files are (this depends on your path and the
    naming scheme you used when using dicomsort.py)"""
-directory = '/Volumes/Extreme_SSD/MPhys/TCIA_Data/NSCLC-Radiomics/NSCLC_Sorted/LUNG1-'
+directory = '/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-'
 
 """ defining the start of the path name of the output file """
-output_file = '/Volumes/Extreme_SSD/MPhys/TCIA_Data/NSCLC-Radiomics/NSCLC_nifti_test/LUNG1-'
+output_file = '/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-'
 
 
 """defining the number of iterations the for loop will perform. +1 is due to the range function"""
@@ -38,7 +38,7 @@ for x in range(1, number_of_iterations) :
                                     # so that it fits the format of the naming scheme used
                                     # e.g. LUNG1-001-CTUnknownStudyID
     output_file_full = output_file + _3_digit_x +'.nii' # the '+.nii' ensures the output file is a NIfTI
-    directory_full = directory + str(_3_digit_x) + '-CTUnknownStudyID/'
+    directory_full = directory + str(_3_digit_x) + '-CT/'
     dicom_names = reader.GetGDCMSeriesFileNames(directory_full)
     reader.SetFileNames(dicom_names)
     image = reader.Execute()
@@ -64,10 +64,11 @@ counter = 0 #Used to check that the code is running
 
 #Defining the start of the path name to where my files are (this depends on your path and the
 # naming scheme you used when using dicomsort.py)
-directory = '/Volumes/Extreme_SSD/MPhys/TCIA_Data/NSCLC-Radiomics/NSCLC_Sorted/LUNG1-'
+directory = '/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-'
 
 # defining the start of the path name of the output file
-output_file = '/Volumes/Extreme_SSD/MPhys/TCIA_Data/NSCLC-Radiomics/NSCLC_nifti/LUNG1-'
+
+output_file = '/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-'
 
 
 #defining the number of iterations the for loop will perform. +1 is due to the range function
@@ -81,7 +82,7 @@ for x in range(1, number_of_iterations) :
                                     # so that it fits the format of the naming scheme used
                                     # e.g. LUNG1-001-CTUnknownStudyID
     output_file_full = output_file + _3_digit_x +'.nii' # the '+.nii' ensures the output file is a NIfTI
-    directory_full = directory + str(_3_digit_x) + '-CTUnknownStudyID/' #   This line will change depending on the naming scheme that you have used
+    directory_full = directory + str(_3_digit_x) + '-CT/' #   This line will change depending on the naming scheme that you have used
     dicom_names = reader.GetGDCMSeriesFileNames(directory_full)
     reader.SetFileNames(dicom_names)
     image = reader.Execute()
