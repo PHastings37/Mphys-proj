@@ -37,6 +37,7 @@ for filename in os.listdir(filepath):
         x = resample_volume(volume)
         counter += 1
 
+        print(x)
         sitk.WriteImage(x, f"{os.path.join(niftypath, filename)}.nii")
 
     else:
