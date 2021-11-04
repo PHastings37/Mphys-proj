@@ -1,0 +1,20 @@
+def WL_norm(img, window=1500, level=-400):
+    """
+    supposed levels for lungs are 1500 and -400
+    Apply window and level to image
+    """
+    
+    maxval = level + window/2
+    minval = level - window/2
+    wl = sitk.IntensityWindowingImageFilter()
+    wl.SetWindowMaximum(maxval)
+    wl.SetWindowMinimum(minval)
+    out = wl.Execute(img)
+    return out
+ 
+"""
+rtstruct = RTStructBuilder.create_from(
+    dicom_series_path=f"{filepath}/LUNG1-001-CT", 
+    rt_struct_path=f"{filepath}/LUNG1-001-RTSTRUCT/3-2.dcm")
+maskimge = sitk.Mask(x, rtstruct.get_roi_mask_by_name("Lung-Right"), outsideValue = 0, maskingValue = 0)
+"""
