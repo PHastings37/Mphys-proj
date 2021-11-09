@@ -15,6 +15,8 @@ from rt_utils import RTStructBuilder
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import os
+import nibabel as nib
+from nibabel.testing import data_path
 
 #==================================================================================
 
@@ -113,7 +115,7 @@ y = mask_3d.astype(int)
 filename = "rtstructtest"
 # sitk.WriteImage(y, f"{os.path.join(niftypath, filename)}.nii")
 
-import nibabel as nib
+
 
 new_img = nib.Nifti1Image(y, affine=np.eye(4))
 print(new_img)

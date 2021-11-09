@@ -18,3 +18,5 @@ rtstruct = RTStructBuilder.create_from(
     rt_struct_path=f"{filepath}/LUNG1-001-RTSTRUCT/3-2.dcm")
 maskimge = sitk.Mask(x, rtstruct.get_roi_mask_by_name("Lung-Right"), outsideValue = 0, maskingValue = 0)
 """
+
+y = mask_3d.astype(int)
