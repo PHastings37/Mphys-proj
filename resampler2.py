@@ -77,7 +77,7 @@ for filename in os.listdir(filepath):
 
         # Setting what the desired mask is (for the case of a tumour we out GTV-1)
         #easiest to view if looking at lungs, so good sanity check
-        mask_3d = mask_3d_Lung_Right + mask_3d_Lung_Left
+        mask_3d = mask_3d_GTV_1
 
         #Converting this array from boolean to binary
         mask_3d = mask_3d + 1
