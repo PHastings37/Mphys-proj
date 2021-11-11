@@ -20,3 +20,7 @@ maskimge = sitk.Mask(x, rtstruct.get_roi_mask_by_name("Lung-Right"), outsideValu
 """
 
 y = mask_3d.astype(int)
+
+
+mask_in.SetDirection(image_out.GetDirection())
+mask_in.SetOrigin(image_out.GetOrigin())
