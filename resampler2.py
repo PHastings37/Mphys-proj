@@ -22,7 +22,7 @@ filepath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED"
 outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
 Output_Spacing = [0.9765625, 0.9765625, 3.0] 
 
-#a change
+#a change2
 def resample_volume(volume, interpolator, def_pix_val):
     #function to resample an image passed in, values passed in depend on CT or rtstruct being passed.
 
