@@ -1,7 +1,13 @@
+"""
+This file was just for a test, see image_cropper for final program
+"""
+
+
 import nibabel as nib
 import numpy as np
 import os
 import SimpleITK as sitk
+
 niftypath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
 outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_CROPPED"
 
@@ -41,11 +47,12 @@ def cropping(array, CoM_array, cropping_size):
     zend = CoM_array[2]+cropping_size
     xstart = xstart.astype(int)
     xend = xend.astype(int)
-    ystart = xstart.astype(int)
-    yend = xend.astype(int)
-    zstart = xstart.astype(int)
-    zend = xend.astype(int)
+    ystart = ystart.astype(int)
+    yend = yend.astype(int)
+    zstart = zstart.astype(int)
+    zend = zend.astype(int)
     #print(xstart, xend, ystart, yend, zstart, zend)
+    #print(f"array:{np.argwhere(array)}")
     cropped_array = array[xstart:xend, ystart:yend, zstart:zend]
     return(cropped_array)
 
@@ -54,15 +61,19 @@ def permute_axes(volume) :
     
     permute = sitk.PermuteAxesImageFilter()
     permute.SetOrder([1,2,0])
+
     return permute.Execute(volume)
+   
 
 CT_image = sitk.ReadImage(f"{niftypath}/LUNG1-001-CT.nii")
 mask_image = sitk.ReadImage(f"{niftypath}/LUNG1-001-RTSTRUCT.nii")
 
 mask_array = sitk.GetArrayFromImage(mask_image)
 CT_array = sitk.GetArrayFromImage(CT_image)
-print(mask_image.GetSize())
-print(CT_image.GetSize())
+
+print(CT_array.shape)
+print(mask_array.shape)
+
 CoM = CoM_tumour(mask_array)
 largest_dist = largest_gtv_finder(mask_array, CoM)
 
@@ -72,17 +83,18 @@ cropping_size = largest_dist + 15
 
 cropped_mask = cropping(mask_array, CoM, cropping_size)
 cropped_CT = cropping(CT_array, CoM, cropping_size)
-print(f"cropped mask:{np.argwhere(cropped_mask)}")
-print(f"mask:{np.argwhere(mask_array)}")
+#print(f"cropped mask:{np.argwhere(cropped_mask)}")
+#print(f"mask:{np.argwhere(mask_array)}")
 
 cropped_mask = sitk.GetImageFromArray(cropped_mask)
-cropped_mask = permute_axes(cropped_mask)
+#cropped_mask = permute_axes(cropped_mask)
 cropped_mask.SetDirection(CT_image.GetDirection())
 cropped_mask.SetOrigin(CT_image.GetOrigin())
 sitk.WriteImage(cropped_mask, "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_CROPPED/masktest.nii")
 
 cropped_CT = sitk.GetImageFromArray(cropped_CT)
-cropped_CT = permute_axes(cropped_CT)
+#cropped_CT = permute_axes(cropped_CT)
 cropped_CT.SetDirection(CT_image.GetDirection())
 cropped_mask.SetOrigin(CT_image.GetOrigin())
+print("writeCT")
 sitk.WriteImage(cropped_CT, "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_CROPPED/CTtest.nii")

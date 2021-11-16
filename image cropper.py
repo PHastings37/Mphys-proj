@@ -46,67 +46,60 @@ def cropping(array, CoM_array, cropping_size):
     zend = CoM_array[2]+cropping_size
     xstart = xstart.astype(int)
     xend = xend.astype(int)
-    ystart = xstart.astype(int)
-    yend = xend.astype(int)
-    zstart = xstart.astype(int)
-    zend = xend.astype(int)
+    ystart = ystart.astype(int)
+    yend = yend.astype(int)
+    zstart = zstart.astype(int)
+    zend = zend.astype(int)
     #print(xstart, xend, ystart, yend, zstart, zend)
+    #print(f"array:{np.argwhere(array)}")
     cropped_array = array[xstart:xend, ystart:yend, zstart:zend]
+    print(cropped_array.shape)
     return(cropped_array)
-
-def permute_axes(volume) :
-   #This function permutes the axes of the input volume.
-    
-    permute = sitk.PermuteAxesImageFilter()
-    permute.SetOrder([1,2,0])
-    return permute.Execute(volume)
 
 CoMs = []
 largest_tumour_axis = 0
-counter = 0
+print("========================PROGRAM STARTING========================")
 for file in os.listdir(niftypath):
-    if counter > 1:
-        break
-    counter+=1
+    print(file)
     if "-RTSTRUCT" in file:
         #loops over all files looking for masks. Finds CoM of tumour from mask
         #finds largest axis in that tumour
         #finds largest overall distance from CoM to edge of a tumour, this defines the size of out crop.
-        mask = nib.load(os.path.join(niftypath, file)).get_data()
-        
-        CoMs.append(CoM_tumour(mask))
+        mask = sitk.ReadImage(os.path.join(niftypath, file))
+        mask_array = sitk.GetArrayFromImage(mask)
+        CoM_temp = CoM_tumour(mask_array)
+        print(CoM_temp)
+        CoMs.append(CoM_temp)
         #print(comx, comy, comz)
-        temp_largest = largest_gtv_finder(mask, CoMs)
+        temp_largest = largest_gtv_finder(mask_array, CoMs)
+        print(f"temp:{temp_largest}")
         #print(temp_largest)
         if temp_largest > largest_tumour_axis:
             largest_tumour_axis = temp_largest
     else:
         continue
 cropping_size = largest_tumour_axis + 15
-#counter = -1
+print(f"cropping size:{cropping_size}")
+counter = -0.5
+print(CoMs)
 for file in os.listdir(niftypath):
-    #counter+=0.5
-    counter = 0
-    # index = np.floor(counter)
-    # index = index.astype(int)
-    print(counter)
-    print(CoMs)
-    CoM_index = CoMs[counter]
-    print(CoM_index)
-    #image = nib.load(os.path.join(niftypath, file)).get_data()
-
+    print(file)
+    counter+=0.5
+    index = np.floor(counter)
+    index = index.astype(int)
+    print(index)
+    CoM_index = CoMs[index]
+    print(f"CoM:{CoM_index}")
 
     image = sitk.ReadImage(os.path.join(niftypath, file))
     array = sitk.GetArrayFromImage(image)
-    print("precrop shape: " + str(array.shape))
+    print(array.shape)
+    print(cropping_size)
     cropped_array = cropping(array, CoM_index, cropping_size)
     print(cropped_array.shape)
 
     cropped_image = sitk.GetImageFromArray(cropped_array)
-    cropped_image = permute_axes(cropped_image)
     cropped_image.SetDirection(image.GetDirection())
     cropped_image.SetOrigin(image.GetOrigin())
     sitk.WriteImage(cropped_image, f"{outputpath}/{file}.nii")
-    if "-RT" in file:
-        print(np.argwhere(cropped_array))
     
