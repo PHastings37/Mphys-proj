@@ -20,13 +20,13 @@ import os
 reader = sitk.ImageSeriesReader()
 filepath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED"
 outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
-Output_Spacing = [0.9765625, 0.9765625, 3.0] 
+Output_Spacing = [1.0, 1.0, 1.0] 
 
 #a change4
 def resample_volume(volume, interpolator, def_pix_val):
     #function to resample an image passed in, values passed in depend on CT or rtstruct being passed.
 
-    new_size = [512, 512, 134] #dimensions chosen based on images in data set, all images being 512x512 then 512 being the next power of 2 after largest file
+    new_size = [512, 511, 510] #dimensions chosen based on images in data set, all images being 512x512 then 512 being the next power of 2 after largest file
     resample = sitk.ResampleImageFilter()
     resample.SetInterpolator(interpolator)
     resample.SetOutputDirection(volume.GetDirection())
@@ -49,6 +49,7 @@ def permute_axes(volume) :
 #iterate over all patients for rt and ct and save a nii of both.
 for filename in os.listdir(filepath):
     print(filename)
+    
     if "-SEG" in filename:
         #dont want to look at seg files here
         continue
@@ -57,18 +58,26 @@ for filename in os.listdir(filepath):
     if "-CT" in filename:
         
         dcm_paths = reader.GetGDCMSeriesFileNames(os.path.join(filepath, filename))
+        dicom_series_path=f"{filepath}/{filename}"
         reader.SetFileNames(dcm_paths)
         image = sitk.ReadImage(dcm_paths)
         dicom = resample_volume(image, sitk.sitkLinear, -1024)
         #dicom = dicom.astype(float)
         sitk.WriteImage(dicom, f"{os.path.join(outputpath, filename)}.nii")
+        print(dicom.GetSize())
 
     elif "-RT" in filename:
+        # rtstruct = RTStructBuilder.create_from(
+        #     dicom_series_path="/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-001-CT", 
+        #     rt_struct_path="/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-001-RTSTRUCT/3-2.dcm"
+        # )
+        rt_name=os.listdir(f"{filepath}/{filename}")
         rtstruct = RTStructBuilder.create_from(
-            dicom_series_path="/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-001-CT", 
-            rt_struct_path="/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-001-RTSTRUCT/3-2.dcm"
-        )           
-
+            dicom_series_path, 
+            rt_struct_path=f"{filepath}/{filename}/{rt_name[0]}"
+            #rt_struct_path = str(filepath + "/" + filename + "/" + os.listdir(f"{filepath}/{filename}"))
+        )         
+        print(rt_name)
         # Getting arrays for all the masks for the determined ROIs
         mask_3d_Lung_Right = rtstruct.get_roi_mask_by_name("Lung-Right") 
         mask_3d_Lung_Left = rtstruct.get_roi_mask_by_name("Lung-Left")
@@ -79,10 +88,6 @@ for filename in os.listdir(filepath):
         #easiest to view if looking at lungs, so good sanity check
         mask_3d = mask_3d_GTV_1
 
-        #Converting this array from boolean to binary
-        mask_3d = mask_3d + 1
-        mask_3d = mask_3d - 1
-
         mask_3d = mask_3d.astype(np.float32)
         mask_3d_image = sitk.GetImageFromArray(mask_3d)
         
@@ -92,5 +97,7 @@ for filename in os.listdir(filepath):
         mask_3d_image.SetDirection(dicom.GetDirection())
         mask_3d_image.SetOrigin(dicom.GetOrigin())
         mask_3d_image_resampled = resample_volume(mask_3d_image, sitk.sitkNearestNeighbor, 0)
+
+        print(mask_3d_image_resampled.GetSize())
 
         sitk.WriteImage(mask_3d_image_resampled, f"{os.path.join(outputpath, filename)}.nii")

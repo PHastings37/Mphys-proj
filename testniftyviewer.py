@@ -1,8 +1,3 @@
-"""
-This file is for cropping medical images around the gross tumour volume(GTV). All the voxels 
-of the input image will need to be of the same size, 1x1x1. The result should be a cube crop 
-around the largest GTV in the dataset with a small window around the edge.
-"""
 import nibabel as nib
 import numpy as np
 import os
@@ -24,7 +19,7 @@ def largest_gtv_finder(mask, CoMs):
     #print(mask[:,:,0])
     bignums = []
     positions = np.argwhere(mask)
-    CoM = CoMs.pop()
+    CoM = CoMs
     bignums.append(np.abs(np.max(positions[:, 0]) - CoM[0]))
     bignums.append(np.abs(np.min(positions[:, 0]) - CoM[0]))
     bignums.append(np.abs(np.max(positions[:, 1]) - CoM[1]))
@@ -32,7 +27,7 @@ def largest_gtv_finder(mask, CoMs):
     bignums.append(np.abs(np.max(positions[:, 2]) - CoM[2]))
     bignums.append(np.abs(np.min(positions[:, 2]) - CoM[2]))
     largest_dist = np.max(bignums)
-    CoMs.append(CoM)
+    #CoMs.append(CoM)
     return(largest_dist)#return furthest distance above and below in x y and z
 
 
@@ -61,52 +56,33 @@ def permute_axes(volume) :
     permute.SetOrder([1,2,0])
     return permute.Execute(volume)
 
-CoMs = []
-largest_tumour_axis = 0
-counter = 0
-for file in os.listdir(niftypath):
-    if counter > 1:
-        break
-    counter+=1
-    if "-RTSTRUCT" in file:
-        #loops over all files looking for masks. Finds CoM of tumour from mask
-        #finds largest axis in that tumour
-        #finds largest overall distance from CoM to edge of a tumour, this defines the size of out crop.
-        mask = nib.load(os.path.join(niftypath, file)).get_data()
-        
-        CoMs.append(CoM_tumour(mask))
-        #print(comx, comy, comz)
-        temp_largest = largest_gtv_finder(mask, CoMs)
-        #print(temp_largest)
-        if temp_largest > largest_tumour_axis:
-            largest_tumour_axis = temp_largest
-    else:
-        continue
-cropping_size = largest_tumour_axis + 15
-#counter = -1
-for file in os.listdir(niftypath):
-    #counter+=0.5
-    counter = 0
-    # index = np.floor(counter)
-    # index = index.astype(int)
-    print(counter)
-    print(CoMs)
-    CoM_index = CoMs[counter]
-    print(CoM_index)
-    #image = nib.load(os.path.join(niftypath, file)).get_data()
+CT_image = sitk.ReadImage(f"{niftypath}/LUNG1-001-CT.nii")
+mask_image = sitk.ReadImage(f"{niftypath}/LUNG1-001-RTSTRUCT.nii")
 
+mask_array = sitk.GetArrayFromImage(mask_image)
+CT_array = sitk.GetArrayFromImage(CT_image)
+print(mask_image.GetSize())
+print(CT_image.GetSize())
+CoM = CoM_tumour(mask_array)
+largest_dist = largest_gtv_finder(mask_array, CoM)
 
-    image = sitk.ReadImage(os.path.join(niftypath, file))
-    array = sitk.GetArrayFromImage(image)
-    print("precrop shape: " + str(array.shape))
-    cropped_array = cropping(array, CoM_index, cropping_size)
-    print(cropped_array.shape)
+print(f"CoM:{CoM}")
+print(f"dist:{largest_dist}")
+cropping_size = largest_dist + 15
 
-    cropped_image = sitk.GetImageFromArray(cropped_array)
-    cropped_image = permute_axes(cropped_image)
-    cropped_image.SetDirection(image.GetDirection())
-    cropped_image.SetOrigin(image.GetOrigin())
-    sitk.WriteImage(cropped_image, f"{outputpath}/{file}.nii")
-    if "-RT" in file:
-        print(np.argwhere(cropped_array))
-    
+cropped_mask = cropping(mask_array, CoM, cropping_size)
+cropped_CT = cropping(CT_array, CoM, cropping_size)
+print(f"cropped mask:{np.argwhere(cropped_mask)}")
+print(f"mask:{np.argwhere(mask_array)}")
+
+cropped_mask = sitk.GetImageFromArray(cropped_mask)
+cropped_mask = permute_axes(cropped_mask)
+cropped_mask.SetDirection(CT_image.GetDirection())
+cropped_mask.SetOrigin(CT_image.GetOrigin())
+sitk.WriteImage(cropped_mask, "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_CROPPED/masktest.nii")
+
+cropped_CT = sitk.GetImageFromArray(cropped_CT)
+cropped_CT = permute_axes(cropped_CT)
+cropped_CT.SetDirection(CT_image.GetDirection())
+cropped_mask.SetOrigin(CT_image.GetOrigin())
+sitk.WriteImage(cropped_CT, "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_CROPPED/CTtest.nii")
