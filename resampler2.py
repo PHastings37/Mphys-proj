@@ -63,9 +63,9 @@ for filename in os.listdir(filepath):
         dicom = resample_volume(image, sitk.sitkLinear, -1024)
         #dicom = dicom.astype(float)
         sitk.WriteImage(dicom, f"{os.path.join(outputpath, filename)}.nii")
-        print(dicom.GetSize())
-        print(dicom.GetDirection())
-        print(dicom.GetOrigin())
+        print(image.GetSize())
+        print(image.GetDirection())
+        print(image.GetOrigin())
 
     elif "-RT" in filename:
         # rtstruct = RTStructBuilder.create_from(

@@ -53,7 +53,6 @@ def cropping(array, CoM_array, cropping_size):
     #print(xstart, xend, ystart, yend, zstart, zend)
     #print(f"array:{np.argwhere(array)}")
     cropped_array = array[xstart:xend, ystart:yend, zstart:zend]
-    print(cropped_array.shape)
     return(cropped_array)
 
 CoMs = []
@@ -69,7 +68,6 @@ for file in os.listdir(niftypath):
         mask = sitk.ReadImage(os.path.join(niftypath, file))
         mask_array = sitk.GetArrayFromImage(mask)
         CoM_temp = CoM_tumour(mask_array)
-        print(CoM_temp)
         CoMs.append(CoM_temp)
         #print(comx, comy, comz)
         temp_largest = largest_gtv_finder(mask_array, CoMs)
@@ -88,16 +86,13 @@ for file in os.listdir(niftypath):
     counter+=0.5
     index = np.floor(counter)
     index = index.astype(int)
-    print(index)
     CoM_index = CoMs[index]
     print(f"CoM:{CoM_index}")
 
     image = sitk.ReadImage(os.path.join(niftypath, file))
     array = sitk.GetArrayFromImage(image)
-    print(array.shape)
-    print(cropping_size)
+
     cropped_array = cropping(array, CoM_index, cropping_size)
-    print(cropped_array.shape)
 
     cropped_image = sitk.GetImageFromArray(cropped_array)
     cropped_image.SetDirection(image.GetDirection())
