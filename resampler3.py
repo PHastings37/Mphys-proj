@@ -22,10 +22,11 @@ filepath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED"
 outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
 Output_Spacing = [1.0, 1.0, 1.0] 
 
+#a change4
 def resample_volume(volume, interpolator, def_pix_val):
     #function to resample an image passed in, values passed in depend on CT or rtstruct being passed.
 
-    new_size = [512, 512, 512] #dimensions chosen based on images in data set, all images being 512x512 then 512 being the next power of 2 after largest file
+    new_size = [138, 138, 138] #dimensions chosen based on images in data set, all images being 512x512 then 512 being the next power of 2 after largest file
     resample = sitk.ResampleImageFilter()
     resample.SetInterpolator(interpolator)
     resample.SetOutputDirection(volume.GetDirection())
@@ -63,9 +64,6 @@ for filename in os.listdir(filepath):
         dicom = resample_volume(image, sitk.sitkLinear, -1024)
         #dicom = dicom.astype(float)
         sitk.WriteImage(dicom, f"{os.path.join(outputpath, filename)}.nii")
-        print(dicom.GetSize())
-        print(dicom.GetDirection())
-        print(dicom.GetOrigin())
 
     elif "-RT" in filename:
         # rtstruct = RTStructBuilder.create_from(
@@ -78,7 +76,7 @@ for filename in os.listdir(filepath):
             rt_struct_path=f"{filepath}/{filename}/{rt_name[0]}"
             #rt_struct_path = str(filepath + "/" + filename + "/" + os.listdir(f"{filepath}/{filename}"))
         )         
-        #print(rt_name)
+        print(rt_name)
         # Getting arrays for all the masks for the determined ROIs
         mask_3d_Lung_Right = rtstruct.get_roi_mask_by_name("Lung-Right") 
         mask_3d_Lung_Left = rtstruct.get_roi_mask_by_name("Lung-Left")
@@ -94,14 +92,9 @@ for filename in os.listdir(filepath):
         
         #sitk.WriteImage(mask_3d_image, f"{outputpath}/testrt.nii")
         mask_3d_image = permute_axes(mask_3d_image)
-        mask_3d_image.SetSpacing(image.GetSpacing())
-        mask_3d_image.SetDirection(image.GetDirection())
-        mask_3d_image.SetOrigin(image.GetOrigin())
-        print(mask_3d_image.GetSpacing())
-        print(mask_3d_image.GetDirection())
-        print(mask_3d_image.GetOrigin())
+        mask_3d_image.SetSpacing(dicom.GetSpacing())
+        mask_3d_image.SetDirection(dicom.GetDirection())
+        mask_3d_image.SetOrigin(dicom.GetOrigin())
         mask_3d_image_resampled = resample_volume(mask_3d_image, sitk.sitkNearestNeighbor, 0)
-
-        print(mask_3d_image_resampled.GetSize())
 
         sitk.WriteImage(mask_3d_image_resampled, f"{os.path.join(outputpath, filename)}.nii")

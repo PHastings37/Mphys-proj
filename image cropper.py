@@ -58,6 +58,7 @@ def cropping(array, CoM_array, cropping_size):
 
 CoMs = []
 largest_tumour_axis = 0
+temp_largest = 0
 print("========================PROGRAM STARTING========================")
 for file in os.listdir(niftypath):
     print(file)
