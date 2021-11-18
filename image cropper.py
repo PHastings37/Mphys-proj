@@ -35,6 +35,9 @@ def largest_gtv_finder(mask, CoMs):
     CoMs.append(CoM)
     return(largest_dist)#return furthest distance above and below in x y and z
 
+def array_filler():
+    return(array)
+
 
 def cropping(array, CoM_array, cropping_size):
     #cropping function, gets passed a mask or an image and returns cropped versions.
@@ -50,9 +53,17 @@ def cropping(array, CoM_array, cropping_size):
     yend = yend.astype(int)
     zstart = zstart.astype(int)
     zend = zend.astype(int)
+    
+    coords = []
+    coords.extend([xstart, xend, ystart, yend, zstart, zend])
+    print(coords)
+    coords = [0 if i < 0 else i for i in coords]
+    print(f"coords:{coords}")
     #print(xstart, xend, ystart, yend, zstart, zend)
     #print(f"array:{np.argwhere(array)}")
-    cropped_array = array[xstart:xend, ystart:yend, zstart:zend]
+    cropped_array = array[coords[0]:coords[1], coords[2]:coords[3], coords[4]:coords[5]]
+    
+
     return(cropped_array)
 
 CoMs = []
@@ -80,7 +91,6 @@ for file in os.listdir(niftypath):
 cropping_size = largest_tumour_axis + 15
 print(f"cropping size:{cropping_size}")
 counter = -0.5
-print(CoMs)
 for file in os.listdir(niftypath):
     print(file)
     counter+=0.5
@@ -97,5 +107,6 @@ for file in os.listdir(niftypath):
     cropped_image = sitk.GetImageFromArray(cropped_array)
     cropped_image.SetDirection(image.GetDirection())
     cropped_image.SetOrigin(image.GetOrigin())
+    print(cropped_array.shape)
     sitk.WriteImage(cropped_image, f"{outputpath}/{file}.nii")
     
