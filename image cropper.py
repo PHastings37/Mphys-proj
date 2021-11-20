@@ -39,7 +39,7 @@ def array_filler():
     return(array)
 
 
-def cropping(array, CoM_array, cropping_size):
+def cropping(array, CoM_array, cropping_size, file):
     #cropping function, gets passed a mask or an image and returns cropped versions.
     xstart = CoM_array[0]-cropping_size
     xend = CoM_array[0]+cropping_size
@@ -58,12 +58,22 @@ def cropping(array, CoM_array, cropping_size):
     coords.extend([xstart, xend, ystart, yend, zstart, zend])
     print(coords)
     coords = [0 if i < 0 else i for i in coords]
+    sub_zero = True
     print(f"coords:{coords}")
     #print(xstart, xend, ystart, yend, zstart, zend)
     #print(f"array:{np.argwhere(array)}")
     cropped_array = array[coords[0]:coords[1], coords[2]:coords[3], coords[4]:coords[5]]
-    
-
+    print(cropped_array.shape)
+    print(cropping_size)
+    if cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == True:
+        print(f"file {file} is being padded")
+        pad_width = []
+        pad_width = cropped_array.shape - 2*cropping_size
+        pad_width = np.abs(pad_width)
+        print(pad_width)
+        np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)))
+    print(f"carray shape: {cropped_array.shape}")
+    print(cropped_array)
     return(cropped_array)
 
 CoMs = []
@@ -102,11 +112,10 @@ for file in os.listdir(niftypath):
     image = sitk.ReadImage(os.path.join(niftypath, file))
     array = sitk.GetArrayFromImage(image)
 
-    cropped_array = cropping(array, CoM_index, cropping_size)
+    cropped_array = cropping(array, CoM_index, cropping_size, file)
 
     cropped_image = sitk.GetImageFromArray(cropped_array)
     cropped_image.SetDirection(image.GetDirection())
     cropped_image.SetOrigin(image.GetOrigin())
-    print(cropped_array.shape)
     sitk.WriteImage(cropped_image, f"{outputpath}/{file}.nii")
     
