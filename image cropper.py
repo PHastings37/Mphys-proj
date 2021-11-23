@@ -56,37 +56,16 @@ def cropping(array, CoM_array, cropping_size, file):
     
     coords = []
     coords.extend([xstart, xend, ystart, yend, zstart, zend])
-    print(coords)
     coords = [0 if i < 0 else i for i in coords]
     sub_zero = True
-    print(f"coords:{coords}")
-    #print(xstart, xend, ystart, yend, zstart, zend)
-    #print(f"array:{np.argwhere(array)}")
     cropped_array = array[coords[0]:coords[1], coords[2]:coords[3], coords[4]:coords[5]]
-    print(cropped_array.shape)
-    print(cropping_size)
     if cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == True:
-        # print(f"file {file} is being padded")
-        # temp_array = np.zeros((int(cropping_size*2), int(cropping_size*2), int(cropping_size*2)))
-        # temp_array = temp_array.astype(bool)
-        # print(f"temp array shape:{temp_array.shape}")
-        # xdiff = int(cropping_size*2 - cropped_array.shape[0])
-        # ydiff = int(cropping_size*2 - cropped_array.shape[1])
-        # zdiff = int(cropping_size*2 - cropped_array.shape[2])
-        # for i in range(cropped_array.shape[0]):
-        #     for j in range(cropped_array.shape[1]):
-        #         for k in range(cropped_array.shape[2]):
-        #             temp_array[i+xdiff,j+ydiff,k+zdiff] = cropped_array[i,j,k]
-        # print(f"temp array shape:{temp_array.shape}")
-        # print(f"cropped array shape: {cropped_array.shape}")
-        # print(temp_array)
         print(f"file {file} is being padded")
         pad_width = []
         pad_width = cropped_array.shape - 2*cropping_size
         pad_width = np.abs(pad_width)
         pad_width=pad_width.astype(int)
         print(f"pad width is {pad_width}")
-        #np.pad(cropped_array, ((500, 500), (200, 200), (0, 0)), "constant")
         cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant")
     print(f"c-array shape: {cropped_array.shape}")
     print(cropped_array)
