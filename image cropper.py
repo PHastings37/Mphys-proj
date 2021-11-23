@@ -21,7 +21,6 @@ def CoM_tumour(mask):
 
 def largest_gtv_finder(mask, CoMs):
     #finds the difference between lowest index anf highest index of x, y and z and returns.#
-    #print(mask[:,:,0])
     bignums = []
     positions = np.argwhere(mask)
     CoM = CoMs.pop()
@@ -34,10 +33,6 @@ def largest_gtv_finder(mask, CoMs):
     largest_dist = np.max(bignums)
     CoMs.append(CoM)
     return(largest_dist)#return furthest distance above and below in x y and z
-
-def array_filler():
-    return(array)
-
 
 def cropping(array, CoM_array, cropping_size, file):
     #cropping function, gets passed a mask or an image and returns cropped versions.
@@ -56,7 +51,7 @@ def cropping(array, CoM_array, cropping_size, file):
     
     coords = []
     coords.extend([xstart, xend, ystart, yend, zstart, zend])
-    coords = [0 if i < 0 else i for i in coords]
+    coords = [0 if i < 0 else i for i in coords]#this line prevents the cropped from trying to -ve index an array
     sub_zero = True
     cropped_array = array[coords[0]:coords[1], coords[2]:coords[3], coords[4]:coords[5]]
     if cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == True:
@@ -66,8 +61,14 @@ def cropping(array, CoM_array, cropping_size, file):
         pad_width = np.abs(pad_width)
         pad_width=pad_width.astype(int)
         print(f"pad width is {pad_width}")
-        cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant")
-    print(f"c-array shape: {cropped_array.shape}")
+
+        if "-CT" in file:
+            #background for a CT image is -1024, not 0 which is for masks.
+            cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant", constant_values = [(-1024,-1024), (-1024,-1024), (-1024,-1024)])
+        else:
+            cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant")
+        
+        print(f"c-array shape: {cropped_array.shape}")
     print(cropped_array)
     return(cropped_array)
 
@@ -97,8 +98,9 @@ cropping_size = largest_tumour_axis + 15
 print(f"cropping size:{cropping_size}")
 counter = -0.5
 for file in os.listdir(niftypath):
+    #runs over all files and crops/pads them to the correct size
     print(file)
-    counter+=0.5
+    counter+=0.5#patient 1 has an rt and a ct so need to do two files for every iteration
     index = np.floor(counter)
     index = index.astype(int)
     CoM_index = CoMs[index]
