@@ -19,7 +19,8 @@ import os
 #Global variables
 reader = sitk.ImageSeriesReader()
 filepath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED"
-outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
+#outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
+outputpath = "/mnt/d/resampled_niftys"
 Output_Spacing = [1.0, 1.0, 1.0] 
 
 def resample_volume(volume, interpolator, def_pix_val):
