@@ -50,9 +50,18 @@ def cropping(array, CoM_array, cropping_size, file):
     zend = zend.astype(int)
     
     coords = []
-    coords.extend([xstart, xend, ystart, yend, zstart, zend])
-    coords = [0 if i < 0 else i for i in coords]#this line prevents the cropped from trying to -ve index an array
     sub_zero = True
+    coords.extend([xstart, xend, ystart, yend, zstart, zend])#appends all starts and ends to a list
+
+    #determines which direction to pad in event of out of bound index
+    if np.any(coords<0) ==True:
+        sub_zero = True
+        coords = [0 if i < 0 else i for i in coords]#this line prevents the cropped from trying to -ve index an array
+    elif np.any(coords>511) ==True:
+        sub_zero = False
+        coords = [0 if i > 511 else i for i in coords]#this line prevents the cropped from trying to -ve index an array
+    
+    
     cropped_array = array[coords[0]:coords[1], coords[2]:coords[3], coords[4]:coords[5]]
     if cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == True:
         print(f"file {file} is being padded")
@@ -67,7 +76,7 @@ def cropping(array, CoM_array, cropping_size, file):
             cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant", constant_values = [(-1024,-1024), (-1024,-1024), (-1024,-1024)])
         else:
             cropped_array = np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)), mode="constant")
-        
+    elif cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == False:
         print(f"c-array shape: {cropped_array.shape}")
     print(cropped_array)
     return(cropped_array)
