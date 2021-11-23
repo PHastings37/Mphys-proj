@@ -66,14 +66,30 @@ def cropping(array, CoM_array, cropping_size, file):
     print(cropped_array.shape)
     print(cropping_size)
     if cropped_array.shape != (cropping_size*2,cropping_size*2,cropping_size*2) and sub_zero == True:
-        print(f"file {file} is being padded")
-        pad_width = []
-        pad_width = cropped_array.shape - 2*cropping_size
-        pad_width = np.abs(pad_width)
-        print(pad_width)
-        np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)))
-    print(f"carray shape: {cropped_array.shape}")
-    print(cropped_array)
+        temp_array = np.zeros((int(cropping_size*2), int(cropping_size*2), int(cropping_size*2)))
+        temp_array = temp_array.astype(bool)
+        print(f"temp array shape:{temp_array.shape}")
+        xdiff = int(cropping_size*2 - cropped_array.shape[0])
+        ydiff = int(cropping_size*2 - cropped_array.shape[1])
+        zdiff = int(cropping_size*2 - cropped_array.shape[2])
+        for i in range(cropped_array.shape[0]):
+            for j in range(cropped_array.shape[1]):
+                for k in range(cropped_array.shape[2]):
+                    temp_array[i+xdiff,j+ydiff,k+zdiff] = cropped_array[i,j,k]
+        print(temp_array.shape)
+        print(cropped_array.shape)
+
+
+
+        # print(f"file {file} is being padded")
+        # pad_width = []
+        # pad_width = cropped_array.shape - 2*cropping_size
+        # pad_width = np.abs(pad_width)
+        # print(pad_width)
+        # np.pad(cropped_array, ((500, 500), (200, 200), (0, 0)), "constant")
+        #np.pad(cropped_array, ((pad_width[0], 0), (pad_width[1], 0), (pad_width[2], 0)))
+    #print(f"carray shape: {cropped_array.shape}")
+    #print(cropped_array)
     return(cropped_array)
 
 CoMs = []
@@ -116,6 +132,7 @@ for file in os.listdir(niftypath):
 
     cropped_image = sitk.GetImageFromArray(cropped_array)
     cropped_image.SetDirection(image.GetDirection())
+    cropped_image.SetSpacing(image.GetSpacing())
     cropped_image.SetOrigin(image.GetOrigin())
     sitk.WriteImage(cropped_image, f"{outputpath}/{file}.nii")
     
