@@ -20,7 +20,7 @@ import os
 reader = sitk.ImageSeriesReader()
 filepath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED"
 #outputpath = "/mnt/c/Users/Patrick/Documents/MPHYS_DATA_NIFTY"
-outputpath = "/mnt/d/resampled_niftys"
+outputpath = "/mnt/d/resampled_niftys"#used this to store data on external drive with space
 Output_Spacing = [1.0, 1.0, 1.0] 
 
 def resample_volume(volume, interpolator, def_pix_val):
@@ -56,7 +56,7 @@ for filename in os.listdir(filepath):
     
     
     if "-CT" in filename:
-        
+
         dcm_paths = reader.GetGDCMSeriesFileNames(os.path.join(filepath, filename))
         dicom_series_path=f"{filepath}/{filename}"
         reader.SetFileNames(dcm_paths)
@@ -74,19 +74,18 @@ for filename in os.listdir(filepath):
         #     rt_struct_path="/mnt/c/Users/Patrick/Documents/MPHYS_DATA_SORTED/LUNG1-001-RTSTRUCT/3-2.dcm"
         # )
         rt_name=os.listdir(f"{filepath}/{filename}")
-        rtstruct = RTStructBuilder.create_from(
-            dicom_series_path, 
-            rt_struct_path=f"{filepath}/{filename}/{rt_name[0]}"
+        rtstruct = RTStructBuilder.create_from(dicom_series_path, rt_struct_path=f"{filepath}/{filename}/{rt_name[0]}"
             #rt_struct_path = str(filepath + "/" + filename + "/" + os.listdir(f"{filepath}/{filename}"))
         )         
-        #print(rt_name)
-        # Getting arrays for all the masks for the determined ROIs
+        print(rt_name)
+        #Getting arrays for all the masks for the determined ROIs
         mask_3d_Lung_Right = rtstruct.get_roi_mask_by_name("Lung-Right") 
         mask_3d_Lung_Left = rtstruct.get_roi_mask_by_name("Lung-Left")
         mask_3d_GTV_1 = rtstruct.get_roi_mask_by_name("GTV-1")
         mask_3d_spinal_cord = rtstruct.get_roi_mask_by_name("Spinal-Cord")
+        
 
-        # Setting what the desired mask is (for the case of a tumour we out GTV-1)
+        #Setting what the desired mask is (for the case of a tumour we out GTV-1)
         #easiest to view if looking at lungs, so good sanity check
         mask_3d = mask_3d_GTV_1
 
