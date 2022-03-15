@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import torch
 
+from sklearn.metrics import confusion_matrix
 from mpl_toolkits.mplot3d import Axes3D
 from torch.nn import Module
 from torch.nn import Conv3d
@@ -45,6 +46,40 @@ import torchvision.models as models
 from torch.autograd import Variable
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
+from scipy.ndimage import zoom, rotate
+import sys
+import time
+
+if len(sys.argv) < 4 :
+  print("Error: User inputs are wrong.")
+  print("The correct usage is: '/content/gdrive/MyDrive/University/Year_4_Sem_2/BinaryClassifier.py' <Number of epochs> <Check day>  <Do you want to use full dataset> <Plot save name.png>")
+
+#NUMBER OF EPOCHS
+num_epochs = int(sys.argv[1])
+
+#CHECK DAY
+user_choice_of_check_day = float(sys.argv[2])
+
+#WHETHER TO USE FULL DATASET OR PARTIAL DATASET
+if sys.argv[3].lower() == 'full' :
+  print('You chose to run the full dataset')
+  full_dataset_choice = True
+elif sys.argv[3].lower() == 'partial' :
+  print('You chose to run the partial dataset')
+  full_dataset_choice = False
+else:
+  print('Error: Your input for whether to use the full dataset must be "True" or "False".')
+  sys.exit(1)
+
+#FILENAME
+# Create a folder at path "folder path" if one does not already exist
+plot_filename = sys.argv[4]
+print(plot_filename)
+plot_date = time.strftime("%Y_%m_%d")
+plot_time = time.strftime("%H_%M_%S")
+plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/rory_and_pat_results/loss_plots/{plot_date}/"
+if not os.path.exists(plot_folder_path):
+  os.makedirs(plot_folder_path)
 
 #====================================================================
 #=================== COLAB SPECIFIC CODE ============================
@@ -57,7 +92,7 @@ from torch.utils.tensorboard import SummaryWriter
 # print(os.path.join(project_folder, clinical_data_filename))
 
 #====================================================================
-#=================== VS Code SPECIFIC CODE ==========================
+#=================== VSCode SPECIFIC CODE ===========================
 #====================================================================
 project_folder = "/home/ptrickhastings37_gmail_com/data/rory_and_pat_data/"
 clinical_data_filename = "382_metadata.csv"
@@ -69,10 +104,22 @@ print(os.path.join(project_folder, clinical_data_filename))
 #====================================================================
 
 # Connect to GPU is available
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
+torch.cuda.set_device(device)
 print(f'Using {device} device')
 # /content/gdrive/MyDrive/MPhys/Data/COLAB-Clinical-Data.csv
 # Specify project folder location
+
+if full_dataset_choice == False:
+  print("You chose to use the partial dataset")
+  project_folder = "/content/gdrive/MyDrive/MPhys/Data/"
+  clinical_data_filename = "COLAB-Clinical-Data.csv"
+  print(os.path.join(project_folder, clinical_data_filename))
+elif full_dataset_choice == True:
+  print("You chose to use the full dataset")
+  project_folder = "/home/ptrickhastings37_gmail_com/data/rory_and_pat_data/"
+  clinical_data_filename = "382_metadata.csv"
+  print(os.path.join(project_folder, clinical_data_filename))
 
 
 #====================================================================
@@ -247,7 +294,7 @@ def training_loop():
     
 
     for i, (images, labels, patient) in enumerate(train_dataloader):
-        images = reshape(images, (images.shape[0], 1, 264, 264, 264))
+        images = reshape(images, (images.shape[0], 1, 160,160,160))
         images = images.float()
         
         #writer.plot_batch(labels[i], images[i])
@@ -310,7 +357,7 @@ def validation_loop() :
         n_valid_correct = 0
         n_valid_samples = 0
         for images, labels, patient in validation_dataloader :
-            images = reshape(images, (images.shape[0],1 ,264,264,264))
+            images = reshape(images, (images.shape[0],1 ,160,160,160))
             images = images.float()
             hot_labels = convert_to_one_hot_labels(images, labels)
 
@@ -354,7 +401,7 @@ def testing_loop():
     for images, labels, patient in test_dataloader :
       # counter+=1
       # print(counter)
-      images = images = reshape(images, (images.shape[0],1 ,264,264,264))
+      images = images = reshape(images, (images.shape[0],1,160,160,160))
       images = images.float()
       hot_labels = convert_to_one_hot_labels(images, labels)
 
@@ -374,22 +421,34 @@ def testing_loop():
 
     return acc
 
-def plot_loss_curves() :
+def window_and_level(image, level = 700, window = 1000) :
+  maxval = level + window/2
+  minval = level - window/2
+  wld = np.clip(image, minval, maxval)
+  wld -=minval
+  wld *= 1/window
+  return wld
+
+
+def save_loss_plots():
   new_avg_train_loss = avg_train_loss
   new_avg_valid_loss = avg_valid_loss
 
-  epochs = np.array(range(num_epochs)) + 1
-  fig = plt.figure()
-  plt.xticks(fontsize=20)
-  plt.yticks(fontsize=20)
-  fig.set_size_inches(20, 10)
-  plt.plot(epochs, new_avg_train_loss, label = 'Average training loss',linewidth=7.0)
-  plt.plot(epochs, new_avg_valid_loss, label = 'Average validation loss',linewidth=7.0)
-  plt.legend(loc='best', prop={'size': 20})
+  epochs = np.array(range(epoch_counter)) + 1
+  loss_plot = plt.figure()
+  plt.xticks(fontsize = 20)
+  plt.yticks(fontsize = 20)
+  loss_plot.set_size_inches(20,10)
+  plt.plot(epochs, new_avg_train_loss, label = 'Average training loss', linewidth = 7.0)
+  plt.plot(epochs, new_avg_valid_loss, label = 'Average validation loss', linewidth = 7.0)
+  plt.legend(loc = 'best', prop={'size': 20})
   plt.ylabel('Average Loss', fontsize = 20)
   plt.xlabel('Epoch Number', fontsize = 20)
-  plt.show()
+  plt.savefig(f'{plot_folder_path}{plot_time}_{plot_filename}_epoch_{epoch_counter}')
+  print(f'The loss plot has been saved in: {plot_folder_path}{plot_date}/{plot_time}_{plot_filename}_epoch_{epoch_counter}')
+
   return
+
 #====================================================================
 #=================  CLASS DEFINITIONS ===============================
 #====================================================================
@@ -467,10 +526,10 @@ class customWriter(SummaryWriter):
         
         image=image[0,:,:,:]
         
-        image=image[:,:,123]
+        image=image[:,:,80]
         ax = fig.add_subplot()
         #print(f"tag:{tag}")
-        ax.imshow(image, cmap="viridis")
+        ax.imshow(image.T, cmap="viridis")
         
         ax.set_title("tumour")
         self.add_figure(str(tag), fig)
@@ -514,6 +573,38 @@ class customWriter(SummaryWriter):
         for class_ in range(self.num_classes+1):
             self.add_scalar(f'Per Class loss for class {class_}', np.mean(self.class_loss[class_]), self.epoch)
 
+
+class results :
+    def __init__(self, expected, predicted) :
+        self.expected = expected
+        self.predicted = predicted
+
+    def confusion_matrix(self):
+        print(confusion_matrix(self.expected, self.predicted))
+    
+    def evaluate_results(self):
+        self.true_positive_counter = 0
+        self.true_negative_counter = 0
+        self.false_positive_counter = 0
+        self.false_negative_counter = 0
+        for i in range(len(self.expected)) :
+            if self.expected[i] == 1 and self.predicted[i] == 1 :
+                self.true_positive_counter += 1
+                # print(f'[{self.expected[i]},{self.predicted[i]}] -> true positive')
+            elif self.expected[i] == 0 and self.predicted[i] == 0 :
+                self.true_negative_counter += 1
+                # print(f'[{self.expected[i]},{self.predicted[i]}] -> true negative')
+            elif self.expected[i] == 0 and self.predicted[i] == 1 :
+                self.false_positive_counter += 1 
+                # print(f'[{self.expected[i]},{self.predicted[i]}] -> false positive')
+            elif self.expected[i] == 1 and self.predicted[i] == 0 :
+                self.false_negative_counter += 1 
+                # print(f'[{self.expected[i]},{self.predicted[i]}] -> false negative')
+        return self.true_positive_counter, self.true_negative_counter, self.false_positive_counter, self.false_negative_counter
+
+
+
+
 # Normalize class added 12/12/2021
 class Normalize():
   def __init__(self):
@@ -529,11 +620,15 @@ transform = transforms.Compose(
 
 
 class ImageDataset(Dataset) :
-  def __init__(self, annotations, img_dir, transform = transform, target_transform = None) :
+  def __init__(self, annotations, img_dir, transform = transform, target_transform = None, shift_augment = True, rotate_augment = True, scale_augment = True, flip_augment = True) :
     self.img_labels = annotations
     self.img_dir = img_dir
     self.transform = transform
     self.target_transform = target_transform
+    self.shifts = shift_augment
+    self.rotations = rotate_augment
+    self.flips = flip_augment
+    self.scales = scale_augment
 
   def __len__(self) :
     return len(self.img_labels)
@@ -552,37 +647,92 @@ class ImageDataset(Dataset) :
     patient = []
     patient.append(self.img_labels[idx][0])
     print(f"patient ID: {self.img_labels[idx][0]}")
-    return image,label,patient
 
-class CNN(nn.Module):   
-    def __init__(self):
-        super(CNN, self).__init__()
+
+    # Augmentations
+    if self.shifts:
+      mx_x, mx_yz = 10, 10 
+      # find shift values
+      cc_shift, ap_shift, lr_shift = random.randint(-mx_x,mx_x), random.randint(-mx_yz,mx_yz), random.randint(-mx_yz,mx_yz)
+      # pad for shifting into
+      image = np.pad(image, pad_width=((mx_x,mx_x),(mx_yz,mx_yz),(mx_yz,mx_yz)), mode='constant', constant_values=-1024) # original is zero but appears to work better with -1024 (HU of air)
+      # crop to complete shift
+      image = image[mx_x+cc_shift:160+mx_x+cc_shift, mx_yz+ap_shift:160+mx_yz+ap_shift, mx_yz+lr_shift:160+mx_yz+lr_shift]
+
+    if self.rotations and random.random() < 0.5 : # normal is 0.5
+      roll_angle = np.clip(np.random.normal(loc=0,scale=3), -15, 15)
+      # print(f'Rotation by angle {roll_angle} applied.')
+      #print(roll_angle)
+      image = self.rotation(image, roll_angle, rotation_plane=(1,2))
+
+    if self.scales and random.random() < 0.5 : # normal is 0.5
+      # same here -> zoom between 80-120%
+      scale_factor = np.clip(np.random.normal(loc=1.0,scale=0.05), 0.7, 1.3)
+      # print(f'Scaled by factor {scale_factor}.')
+      image = self.scale(image, scale_factor)
+    
+    if self.flips and random.random() < 0.5 : # normal is 0.5
+        # print(f'Left-right flip applied')
+        image = np.flipud(image)
+    
+    image = window_and_level(image)
+
+    if self.transform :
+      image = self.transform(image)
+    if self.target_transform :
+      label = self.target_transform(label)
+    return image,label,patient
+  
+  def rotation(self, image, rotation_angle, rotation_plane):
+      # rotate the image or mask using scipy rotate function
+      order, cval = (3, -1024)
+      return rotate(input=image, angle=rotation_angle, axes=rotation_plane, reshape=False, order=order, mode='constant', cval=cval)
+    
+  def scale(self, image, scale_factor):
+      # scale the image or mask using scipy zoom function
+      order, cval = (3, -1024)
+      height, width, depth = image.shape
+      zheight = int(np.round(scale_factor*height))
+      zwidth = int(np.round(scale_factor*width))
+      zdepth = int(np.round(scale_factor*depth))
+      # zoomed out
+      if scale_factor < 1.0:
+          new_image = np.full_like(image, cval)
+          ud_buffer = (height-zheight) // 2
+          ap_buffer = (width-zwidth) // 2
+          lr_buffer = (depth-zdepth) // 2
+          new_image[ud_buffer:ud_buffer+zheight, ap_buffer:ap_buffer+zwidth, lr_buffer:lr_buffer+zdepth] = zoom(input=image, zoom=scale_factor, order=order, mode='constant', cval=cval)[0:zheight, 0:zwidth, 0:zdepth]
+          return new_image
+      elif scale_factor > 1.0:
+          new_image = zoom(input=image, zoom=scale_factor, order=order, mode='constant', cval=cval)[0:zheight, 0:zwidth, 0:zdepth]
+          ud_extra = (new_image.shape[0] - height) // 2
+          ap_extra = (new_image.shape[1] - width) // 2
+          lr_extra = (new_image.shape[2] - depth) // 2
+          new_image = new_image[ud_extra:ud_extra+height, ap_extra:ap_extra+width, lr_extra:lr_extra+depth]
+          return new_image
+      return image
+    
+
+class CNN(nn.Module):
 
     def __init__(self):
       super(CNN, self).__init__()
       self.conv1 = nn.Conv3d(1,32,2,2)
       self.pool = nn.MaxPool3d(2,2)
-      self.avg_pool = nn.AvgPool3d(4)
-      self.conv2 = nn.Conv3d(32,64,2,2)
-      self.conv3 = nn.Conv3d(64,128,2,2)
-      self.conv4 = nn.Conv3d(128,64,1,1)
-      self.conv5 = nn.Conv3d(64,16,1,1)
-      self.conv6 = nn.Conv3d(16,2,1,1)
+      self.avg_pool = nn.AvgPool3d(10)
+      self.conv2 = nn.Conv3d(32,128,2,2)
+      self.conv3 = nn.Conv3d(128,64,1,1)
+      self.conv4 = nn.Conv3d(64,16,1,1)
+      self.conv5 = nn.Conv3d(16,2,1,1)
 
     # Defining the forward pass  (NIN method)  
     def forward(self, x):
-        #print(f'Input to the network: {x}')
         x = self.pool(F.leaky_relu(self.conv1(x)))
         x = self.pool(F.leaky_relu(self.conv2(x)))
-        x = self.pool(F.leaky_relu(self.conv3(x)))
-        #print(f'Before the weird conv layers: {x}')
+        x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
-        x = F.leaky_relu(self.conv5(x))
-        x = self.avg_pool(self.conv6(x))
-        #print(f'After the average pooling function: {x}')
+        x = self.avg_pool(self.conv5(x))
         x = x.view(-1,2)
-        
-        
         return x
         
 model = CNN().to(device) # Send the CNN to the device
@@ -610,7 +760,7 @@ batch_size = 4
 learning_rate = 0.001
 criterion = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
-num_epochs = 1
+num_epochs = 3
 
 #====================================================================
 #=================== MAIN CODE ======================================
@@ -658,7 +808,7 @@ train_dataloader = DataLoader(training_data, batch_size = 4, shuffle = True)
 test_dataloader = DataLoader(test_data, batch_size = 4, shuffle = False)
 validation_dataloader = DataLoader(validation_data, batch_size = 4, shuffle = True)
 
-summary(model, (1,264,264,264), batch_size = 4)
+summary(model, (1,160,160,160), batch_size = 4)
 patient = ""
 
 #============================ TRAINING AND VALIDATION LOOP ==========
@@ -670,12 +820,20 @@ valid_loss = []
 avg_train_loss = np.empty(0)
 avg_valid_loss = np.empty(0)
 all_training_losses = []
-print("test")
+epoch_counter = 0
 
 for epoch in range(num_epochs):
     writer.epoch = epoch
+    epoch_validation_targets = []
+    epoch_validation_predictions = []
+    epoch_counter += 1
     avg_train_loss = np.append(avg_train_loss, training_loop())
     avg_valid_loss = np.append(avg_valid_loss, validation_loop())
+    print(f"epoch_validation_targets = {epoch_validation_targets}")
+    print(f"epoch_validation_predictions = {epoch_validation_predictions}")
+    epoch_results = results(epoch_validation_targets, epoch_validation_predictions)
+    print(f'(TP, TN, FP, FN): {epoch_results.evaluate_results()}')
+    save_loss_plots()
 
 print('FINISHED TRAINING')
 print(f'All training batch losses = {all_training_losses}')
@@ -684,7 +842,21 @@ print(f'Average training losses = {avg_train_loss}')
 print(f'Validation losses = {avg_valid_loss}')
 
 #===================== PLOT LOSS CURVES =============================
-plot_loss_curves()
+# new_avg_train_loss = avg_train_loss
+# new_avg_valid_loss = avg_valid_loss
+
+# epochs = np.array(range(num_epochs)) + 1
+# loss_plot = plt.figure()
+# plt.xticks(fontsize = 20)
+# plt.yticks(fontsize = 20)
+# loss_plot.set_size_inches(20,10)
+# plt.plot(epochs, new_avg_train_loss, label = 'Average training loss', linewidth = 7.0)
+# plt.plot(epochs, new_avg_valid_loss, label = 'Average validation loss', linewidth = 7.0)
+# loss_plot.legend(loc = 'best', prop={'size': 20})
+# plt.ylabel('Average Loss', fontsize = 20)
+# plt.xlabel('Epoch Number', fontsize = 20)
+# plt.savefig(f'{plot_folder_path}{plot_filename}')
+# print(f'The loss plot has been saved in: {plot_folder_path}{plot_filename}')
 
 #===================== TESTING LOOP =================================
 testing_accuracy = testing_loop()
