@@ -77,7 +77,8 @@ plot_filename = sys.argv[4]
 print(plot_filename)
 plot_date = time.strftime("%Y_%m_%d")
 plot_time = time.strftime("%H_%M_%S")
-plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/rory_and_pat_results/loss_plots/{plot_date}/"
+#plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/rory_and_pat_results/loss_plots/{plot_date}/"
+plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/pat_results/"
 if not os.path.exists(plot_folder_path):
   os.makedirs(plot_folder_path)
 
@@ -313,8 +314,10 @@ def training_loop():
 
         #forward pass
         outputs = model(images)
+       
         # print (outputs)
         loss = criterion(outputs, hot_labels)
+        
 
         #backwards pass
         optimizer.zero_grad() #clears gradients before performing backpropagation
@@ -328,23 +331,22 @@ def training_loop():
         # Updating the total training loss of this epoch
         all_training_losses.append(loss.item())
         epoch_train_loss += loss.item()
-        
+
         if (i+1)%1 == 0 :
             print(f'Epoch {epoch+1}/{num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
 
     # Append the train_loss list with the total training loss for this epoch
     train_loss.append(epoch_train_loss)
-    
 
     #Append the avg_train_loss list with the average training loss of this epoch
     avg_train_loss = epoch_train_loss/n_training_samples
-    writer.add_scalar("training loss", avg_train_loss, epoch)
     print(f"Average training loss list: {avg_train_loss}")
 
     print(f"Training loss array at end of epoch {epoch + 1}: {train_loss}. Total number of images used = {n_training_samples}.")
     print(f"Finished training for epoch {epoch + 1}")
 
     return avg_train_loss
+
 
 def validation_loop() :
     print(f'Validation for epoch {epoch + 1}')
@@ -421,7 +423,7 @@ def testing_loop():
 
     return acc
 
-def window_and_level(image, level = 700, window = 1000) :
+def window_and_level(image, level = -700, window = 1000) :
   maxval = level + window/2
   minval = level - window/2
   wld = np.clip(image, minval, maxval)
@@ -602,20 +604,8 @@ class results :
                 # print(f'[{self.expected[i]},{self.predicted[i]}] -> false negative')
         return self.true_positive_counter, self.true_negative_counter, self.false_positive_counter, self.false_negative_counter
 
-
-
-
-# Normalize class added 12/12/2021
-class Normalize():
-  def __init__(self):
-    pass
-
-  def __call__(self,vol):
-    vol =((vol-(vol.mean()))/vol.std()) + 1
-    return vol
-
 transform = transforms.Compose(
-    [transforms.ToTensor(), Normalize() ] #added 13/12/2021 to normalize the inputs. THIS NORMALIZES to mean = 0 and std = 1
+    [transforms.ToTensor() ] #added 13/12/2021 to normalize the inputs. THIS NORMALIZES to mean = 0 and std = 1
 )
 
 
