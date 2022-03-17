@@ -78,7 +78,7 @@ print(plot_filename)
 plot_date = time.strftime("%Y_%m_%d")
 plot_time = time.strftime("%H_%M_%S")
 #plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/rory_and_pat_results/loss_plots/{plot_date}/"
-plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/pat_results/"
+plot_folder_path = f"/home/ptrickhastings37_gmail_com/data/pat_results/{plot_date}/"
 if not os.path.exists(plot_folder_path):
   os.makedirs(plot_folder_path)
 
@@ -344,7 +344,8 @@ def training_loop():
 
     print(f"Training loss array at end of epoch {epoch + 1}: {train_loss}. Total number of images used = {n_training_samples}.")
     print(f"Finished training for epoch {epoch + 1}")
-
+    
+    writer.plot_scalar("Train Loss", avg_train_loss)
     return avg_train_loss
 
 
@@ -380,6 +381,16 @@ def validation_loop() :
             n_valid_samples += labels.shape[0]
             n_valid_correct += (predictions == targets).sum().item()
             #print(f'n_correct = {n_correct}. n_samples = {n_samples}')
+
+            labels_numpy = labels.numpy()
+            for index in range(labels_numpy.size):
+              epoch_validation_targets.append(labels_numpy[index])
+            
+            predictions_numpy = predictions.cpu().numpy()
+            for index in range(predictions_numpy.size):
+              epoch_validation_predictions.append(predictions_numpy[index])
+
+
         avg_valid_loss = valid_epoch_loss/n_valid_samples
         #valid_loss.append(valid_epoch_loss)
         acc = (100*n_valid_correct)/n_valid_samples
@@ -388,8 +399,9 @@ def validation_loop() :
 
         print(f'Finished validation for epoch {epoch+1}')
         print('=============================================')
-        writer.add_scalar("Validation Loss", avg_valid_loss, epoch)
-        writer.add_scalar("Validation Accuracy", acc, epoch)
+        
+    writer.plot_scalar("Validation Loss", avg_valid_loss)
+    writer.plot_scalar("Validation Accuracy", acc)
     return avg_valid_loss
 
 def testing_loop():
@@ -420,7 +432,6 @@ def testing_loop():
       #print(f'n_correct = {n_correct}. n_samples = {n_samples}')
     
     acc = (100*n_correct)/n_samples
-
     return acc
 
 def window_and_level(image, level = -700, window = 1000) :
@@ -498,45 +509,20 @@ class customWriter(SummaryWriter):
 
     
     def plot_tumour(self, tag, image):
-        """
-        Plot predictions vs target segmentation.
-        Args: tag = identifier for plot (string)
-              prediction = batch output of trained model (torch.tensor)
-              target = batch ground-truth segmentations (torch.tensor)
-        """
-        # fig = plt.figure(figsize=(24, 24))
-        # prediction = self.sigmoid(prediction)
-        # for idx in np.arange(self.batch_size):
-        #     ax = fig.add_subplot(self.batch_size // 2, self.batch_size // 2,
-        #                         idx+1, xticks=[], yticks=[], label='segmentations')
-        #     ax.imshow(prediction[idx, 0].cpu().numpy(
-        #     ), cmap='viridis')
-        #     if plot_target:
-        #         ax.imshow(target[idx, 0].cpu().numpy(), cmap='gray', alpha=0.25)
-        #     ax.set_title('prediction @ epoch: {} - idx: {}'.format(self.epoch, idx))
-        # self.add_figure(tag, fig)
+        
         fig = plt.figure(figsize=(24, 24))
-        
-        
-
-        
         image=image.cpu()
-        
         image=image.detach().numpy()
-        
-     
-        
         image=image[0,:,:,:]
-        
         image=image[:,:,80]
         ax = fig.add_subplot()
         #print(f"tag:{tag}")
         ax.imshow(image.T, cmap="viridis")
-        
         ax.set_title("tumour")
         self.add_figure(str(tag), fig)
 
-
+    def plot_scalar(self, name, value):
+        self.add_scalar(name, value, self.epoch)
 
 
     def plot_histogram(self, tag, prediction):
@@ -750,7 +736,7 @@ batch_size = 4
 learning_rate = 0.001
 criterion = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
-num_epochs = 3
+num_epochs = 5
 
 #====================================================================
 #=================== MAIN CODE ======================================
