@@ -22,6 +22,7 @@ import os
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import torch
+import sklearn
 
 from sklearn.metrics import confusion_matrix
 from mpl_toolkits.mplot3d import Axes3D
@@ -49,6 +50,7 @@ from torch.utils.tensorboard import SummaryWriter
 from scipy.ndimage import zoom, rotate
 import sys
 import time
+import itertools
 
 if len(sys.argv) < 4 :
   print("Error: User inputs are wrong.")
@@ -524,6 +526,30 @@ class customWriter(SummaryWriter):
     def plot_scalar(self, name, value):
         self.add_scalar(name, value, self.epoch)
 
+    def plot_confusion_matrix(self, cm, class_names):
+      print(type(cm))
+      figure = plt.figure(figsize=(8,8))
+      plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
+      plt.title("Confusion Matrix")
+      plt.colorbar()
+      tick_marks = np.arange(len(class_names))
+      plt.xticks(tick_marks, class_names, rotation=45)
+      plt.xticks(tick_marks, class_names)
+
+      #Normalize confusion matrix
+      cm = np.around(cm.astype('float')/cm.sum(axis=1)[:,np.newaxis],decimals=2)
+
+      # Use white text if squares are dark; otherwise black.
+      threshold = cm.max() / 2.
+
+      for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        color = "white" if cm[i, j] > threshold else "black"
+        plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
+
+      plt.tight_layout()
+      plt.ylabel('True label')
+      plt.xlabel('Predicted label')
+      self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
 
     def plot_histogram(self, tag, prediction):
         print('Plotting histogram')
@@ -568,7 +594,8 @@ class results :
         self.predicted = predicted
 
     def confusion_matrix(self):
-        print(confusion_matrix(self.expected, self.predicted))
+        print(sklearn.metrics.confusion_matrix(self.expected, self.predicted))
+        return sklearn.metrics.confusion_matrix(self.expected, self.predicted)
     
     def evaluate_results(self):
         self.true_positive_counter = 0
@@ -808,7 +835,11 @@ for epoch in range(num_epochs):
     print(f"epoch_validation_targets = {epoch_validation_targets}")
     print(f"epoch_validation_predictions = {epoch_validation_predictions}")
     epoch_results = results(epoch_validation_targets, epoch_validation_predictions)
+    conf_mat = epoch_results.confusion_matrix()
     print(f'(TP, TN, FP, FN): {epoch_results.evaluate_results()}')
+    print(type(conf_mat))
+    if (epoch+1)%5 == 0:
+      writer.plot_confusion_matrix(conf_mat, ["dead","alive"])
     save_loss_plots()
 
 print('FINISHED TRAINING')
