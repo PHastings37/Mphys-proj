@@ -822,13 +822,13 @@ class ResNet(nn.Module):
                  block,
                  layers,
                  block_inplanes,
-                 n_input_channels=3,
+                 n_input_channels=1,
                  conv1_t_size=7,
                  conv1_t_stride=1,
                  no_max_pool=False,
                  shortcut_type='B',
                  widen_factor=1.0,
-                 n_classes=400):
+                 n_classes=2):
         super().__init__()
 
         block_inplanes = [int(x * widen_factor) for x in block_inplanes]
@@ -973,7 +973,7 @@ class CNN(nn.Module):
         return x
         
 #model = CNN().to(device) # Send the CNN to the device
-generate_model(10)
+model = generate_model(10)
 #====================================================================
 #=================== DEFIINING VARIABLES ============================
 #====================================================================
