@@ -306,7 +306,7 @@ def training_loop():
         images = images.to(device)
         hot_labels = hot_labels.to(device)
 
-        print(f"tag:{patient}")
+        #print(f"tag:{patient}")
         pat_temp = patient.pop(0)
         pat_temp_list = list(pat_temp)
         for j in range(len(pat_temp_list)):
@@ -334,8 +334,9 @@ def training_loop():
         all_training_losses.append(loss.item())
         epoch_train_loss += loss.item()
 
-        if (i+1)%1 == 0 :
+        if (i+1)%5 == 0 :
             print(f'Epoch {epoch+1}/{num_epochs}, step {i+1}/{n_total_steps}, loss = {loss.item():.4f}')
+            print(f"outputs: {outputs}")
 
     # Append the train_loss list with the total training loss for this epoch
     train_loss.append(epoch_train_loss)
@@ -527,6 +528,7 @@ class customWriter(SummaryWriter):
         self.add_scalar(name, value, self.epoch)
 
     def plot_confusion_matrix(self, cm, class_names):
+      #function taken from https://towardsdatascience.com/exploring-confusion-matrix-evolution-on-tensorboard-e66b39f4ac12
       print(type(cm))
       figure = plt.figure(figsize=(8,8))
       plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
@@ -534,7 +536,7 @@ class customWriter(SummaryWriter):
       plt.colorbar()
       tick_marks = np.arange(len(class_names))
       plt.xticks(tick_marks, class_names, rotation=45)
-      plt.xticks(tick_marks, class_names)
+      plt.yticks(tick_marks, class_names)
 
       #Normalize confusion matrix
       cm = np.around(cm.astype('float')/cm.sum(axis=1)[:,np.newaxis],decimals=2)
@@ -649,7 +651,7 @@ class ImageDataset(Dataset) :
       label = self.target_transform(label)
     patient = []
     patient.append(self.img_labels[idx][0])
-    print(f"patient ID: {self.img_labels[idx][0]}")
+    #print(f"patient ID: {self.img_labels[idx][0]}")
 
 
     # Augmentations
@@ -927,6 +929,8 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
+
+
         return x
 
 
@@ -995,8 +999,10 @@ validation_array = []
 #====================================================================
 batch_size = 4
 learning_rate = 0.001
+
 criterion = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
 num_epochs = 200
 
 #====================================================================
@@ -1067,6 +1073,7 @@ for epoch in range(num_epochs):
     epoch_counter += 1
     avg_train_loss = np.append(avg_train_loss, training_loop())
     avg_valid_loss = np.append(avg_valid_loss, validation_loop())
+    scheduler.step(avg_valid_loss[epoch])
     print(f"epoch_validation_targets = {epoch_validation_targets}")
     print(f"epoch_validation_predictions = {epoch_validation_predictions}")
     epoch_results = results(epoch_validation_targets, epoch_validation_predictions)
@@ -1074,7 +1081,7 @@ for epoch in range(num_epochs):
     print(f'(TP, TN, FP, FN): {epoch_results.evaluate_results()}')
     print(type(conf_mat))
     if (epoch+1)%5 == 0:
-      writer.plot_confusion_matrix(conf_mat, ["dead","alive"])
+      writer.plot_confusion_matrix(conf_mat, ["alive","dead"])
     save_loss_plots()
 
 print('FINISHED TRAINING')
