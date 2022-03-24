@@ -826,7 +826,7 @@ class ResNet(nn.Module):
                  block_inplanes,
                  n_input_channels=1,
                  conv1_t_size=7,
-                 conv1_t_stride=1,
+                 conv1_t_stride=2,
                  no_max_pool=False,
                  shortcut_type='B',
                  widen_factor=1.0,
@@ -867,6 +867,8 @@ class ResNet(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(block_inplanes[3] * block.expansion, n_classes)
+        self.layer5 = nn.Conv3d(block_inplanes[3] * block.expansion, n_classes, 1, 1)
+        self.avgpool2 = nn.AvgPool3d(1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -923,13 +925,12 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
+        #x = self.layer5(x)
         x = self.avgpool(x)
 
+        #x = x.view(-1, 2)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
-
 
         return x
 
@@ -1003,7 +1004,6 @@ learning_rate = 0.001
 criterion = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
-num_epochs = 200
 
 #====================================================================
 #=================== MAIN CODE ======================================
