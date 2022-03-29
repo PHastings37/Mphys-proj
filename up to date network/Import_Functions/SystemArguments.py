@@ -49,7 +49,7 @@ def get_system_arguments(user_input_array) :
     # User input for the filename of the network save
     network_date = time.strftime("%Y_%m_%d")
     network_filename = user_input_array[4]
-    network_folder_path = f"/home/rory_farwell1_gmail_com/data/rory_pat_network_saves/{network_date}/"
+    network_folder_path = f"/home/ptrickhastings37_gmail_com/Mphys-proj/up to date network/network_saves/{network_date}/"
     if not os.path.exists(network_folder_path):
         os.makedirs(network_folder_path)
     network_filepath = f"{network_folder_path}{network_filename}"

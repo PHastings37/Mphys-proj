@@ -1,7 +1,7 @@
 """
 This code trains, validates and tests a custom binary classfiying CNN.
 
-The inputs to the network are 264 x 264 x 264 textured masks of NSCLC pre-treatment CT scans.
+The inputs to the network are 160 x 160 x 160 textured masks of NSCLC pre-treatment CT scans.
 
 Rory Farwell and Patrick Hastings 08/02/2022
 
@@ -237,6 +237,7 @@ avg_valid_loss = np.empty(0)
 all_training_losses = []
 epoch_counter = 0
 minimum_average_validation_loss = 100000
+current_best_epoch = 0
 
 for epoch in range(num_epochs):
     #send train loss and val loss to tb from here?
@@ -250,8 +251,13 @@ for epoch in range(num_epochs):
     epoch_validation_predictions, writer)
     avg_valid_loss = np.append(avg_valid_loss, epoch_average_validation_loss)
     if epoch_average_validation_loss < minimum_average_validation_loss :
+      if current_best_epoch != 0 :
+          os.remove(f'{network_filepath}_epoch{current_best_epoch}')
+
+      current_best_epoch = epoch+1
       minumum_average_validation_loss = epoch_average_validation_loss
       torch.save(model.state_dict(), f'{network_filepath}_epoch{epoch+1}')
+
       epoch_save_number = epoch+1
     scheduler.step(avg_valid_loss[epoch])
     # print(f"epoch_validation_targets = {epoch_validation_targets}")
