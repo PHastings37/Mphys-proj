@@ -21,9 +21,9 @@ def get_system_arguments(user_input_array) :
     Rory Farwell and Patrick Hastings 22/03/2022
     """
 
-    if len(user_input_array) != 5 :
+    if len(user_input_array) != 6:
         print("Error: incorrect user inputs. Please enter in the following format")
-        print(" python <Code_filename.py> <Number of epochs> <Check day> <Plot save name.png> <network save filename>")
+        print(" python <Code_filename.py> <Number of epochs> <Check day> <Plot save name.png> <network save filename> <-test or -full>")
         return sys.exit(1)
     
     #NUMBER OF EPOCHS
@@ -55,4 +55,6 @@ def get_system_arguments(user_input_array) :
     network_filepath = f"{network_folder_path}{network_filename}"
     print(f"The best performing network from this training run will be saved at the following filepath: {network_folder_path}{network_filename}")
 
-    return num_epochs, user_choice_of_check_day, plot_folder_path, network_filepath, plot_filename
+    run_mode = user_input_array[5]
+    
+    return num_epochs, user_choice_of_check_day, plot_folder_path, network_filepath, plot_filename, run_mode

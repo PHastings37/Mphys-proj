@@ -46,10 +46,10 @@ class ImageDataset(Dataset) :
     # print(f'ID: {ID}')
     image = sitk.GetArrayFromImage(image_sitk)
     label = self.img_labels[idx][1]
-    if self.transform :
-      image = self.transform(image)
-    if self.target_transform :
-      label = self.target_transform(label)
+    # if self.transform :
+    #   image = self.transform(image)
+    # if self.target_transform :
+    #   label = self.target_transform(label)
     patient = []
     patient.append(self.img_labels[idx][0])
     #print(f"patient ID: {self.img_labels[idx][0]}")

@@ -206,7 +206,7 @@ outcomes_test = pickle.load(open_file)
 open_file.close()
 # print(outcomes_test)
 
-test_data = ImageDataset_Class.ImageDataset(outcomes_test, os.path.join(project_folder, "textured_masks"), transform = transform)
+test_data = ImageDataset_Class.ImageDataset(outcomes_test, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
 test_dataloader = DataLoader(test_data, batch_size = 4, shuffle = False)
 
 model = RN.generate_model(10, device)

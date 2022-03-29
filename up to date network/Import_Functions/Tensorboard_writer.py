@@ -18,7 +18,7 @@ import torch
 import itertools
 
 class customWriter(SummaryWriter):
-    def __init__(self, log_dir, batch_size, epoch, num_classes):
+    def __init__(self, log_dir, batch_size, epoch, num_classes, test_run):
         super(customWriter, self).__init__()
         self.log_dir = log_dir
         self.batch_size = batch_size
@@ -27,6 +27,8 @@ class customWriter(SummaryWriter):
         self.train_loss = []
         self.val_loss = []
         self.class_loss = {n: [] for n in range(num_classes+1)}
+        self.test_run = test_run
+        print(f"log ={log_dir}")
     
     @staticmethod
     def sigmoid(x):
@@ -48,7 +50,8 @@ class customWriter(SummaryWriter):
 
     
     def plot_tumour(self, tag, image):
-        
+        if self.test_run == True:
+            return
         fig = plt.figure(figsize=(24, 24))
         image=image.cpu()
         image=image.detach().numpy()
@@ -59,48 +62,60 @@ class customWriter(SummaryWriter):
         ax.imshow(image.T, cmap="viridis")
         ax.set_title("tumour")
         self.add_figure(str(tag), fig)
+        
 
     def plot_scalar(self, name, value):
+        if self.test_run == True:
+            return
+        
         self.add_scalar(name, value, self.epoch)
+        
 
     def plot_confusion_matrix(self, cm, class_names):
-      #function taken from https://towardsdatascience.com/exploring-confusion-matrix-evolution-on-tensorboard-e66b39f4ac12
-      print(type(cm))
-      figure = plt.figure(figsize=(8,8))
-      plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
-      plt.title("Confusion Matrix")
-      plt.colorbar()
-      tick_marks = np.arange(len(class_names))
-      plt.xticks(tick_marks, class_names, rotation=45)
-      plt.yticks(tick_marks, class_names)
+        #function taken from https://towardsdatascience.com/exploring-confusion-matrix-evolution-on-tensorboard-e66b39f4ac12
+        if self.test_run == True:
+            return
 
-      #Normalize confusion matrix
-      cm = np.around(cm.astype('float')/cm.sum(axis=1)[:,np.newaxis],decimals=2)
+        print(type(cm))
+        figure = plt.figure(figsize=(8,8))
+        plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
+        plt.title("Confusion Matrix")
+        plt.colorbar()
+        tick_marks = np.arange(len(class_names))
+        plt.xticks(tick_marks, class_names, rotation=45)
+        plt.yticks(tick_marks, class_names)
 
-      # Use white text if squares are dark; otherwise black.
-      threshold = cm.max() / 2.
+        #Normalize confusion matrix
+        cm = np.around(cm.astype('float')/cm.sum(axis=1)[:,np.newaxis],decimals=2)
 
-      for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        color = "white" if cm[i, j] > threshold else "black"
-        plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
+        # Use white text if squares are dark; otherwise black.
+        threshold = cm.max() / 2.
 
-      plt.tight_layout()
-      plt.ylabel('True label')
-      plt.xlabel('Predicted label')
-      self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            color = "white" if cm[i, j] > threshold else "black"
+            plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
+
+        plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+      
 
     def plot_histogram(self, tag, prediction):
+        if self.test_run == True:
+            return
+
         print('Plotting histogram')
         fig = plt.figure(figsize=(24, 24))
         for idx in np.arange(self.batch_size):
             ax = fig.add_subplot(self.batch_size // 2, self.batch_size // 2,
-                                 idx+1, yticks=[], label='histogram')
+                                idx+1, yticks=[], label='histogram')
             pred_norm = (prediction[idx, 0]-prediction[idx, 0].min())/(
                 prediction[idx, 0].max()-prediction[idx, 0].min())
             ax.hist(pred_norm.cpu().flatten(), bins=100)
             ax.set_title(
                 f'Prediction histogram @ epoch: {self.epoch} - idx: {idx}')
         self.add_figure(tag, fig)
+        
 
     def per_class_loss(self, prediction, target, criterion, alpha=None):
         # Predict shape: (4, 1, 512, 512)

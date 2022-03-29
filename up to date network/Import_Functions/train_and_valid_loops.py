@@ -7,7 +7,7 @@ import torch
 from torch import reshape
 
 def training_loop(epoch, model, train_dataloader, device, writer, criterion, optimizer, all_training_losses,
-    num_epochs, n_total_steps, train_loss):
+    num_epochs, n_total_steps, train_loss, test_run):
     epoch_train_loss = 0 # will be used for plotting testing vs validation loss curves
     n_training_samples = 0
     print(f'Training for epoch {epoch+1}')
@@ -68,7 +68,7 @@ def training_loop(epoch, model, train_dataloader, device, writer, criterion, opt
     return avg_train_loss
 
 def validation_loop(epoch, model, validation_dataloader, device, criterion, epoch_validation_targets, 
-    epoch_validation_predictions, writer) :
+    epoch_validation_predictions, writer, test_run) :
     print(f'Validation for epoch {epoch + 1}')
     print('=================================')
 
