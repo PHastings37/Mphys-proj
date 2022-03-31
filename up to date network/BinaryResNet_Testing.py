@@ -70,6 +70,11 @@ import pickle
 import Import_Functions.ResNet as RN
 import Import_Functions.testing_loop as loop
 # Using GPU 1, which is the one that has been allocated to us
+
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from medcam import medcam
+
 device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
 torch.cuda.set_device(device)
 print(f'Using {device} device')
@@ -204,10 +209,13 @@ if len(sys.argv) != 2:
 open_file = open("testing_data_list.pkl", "rb")
 outcomes_test = pickle.load(open_file)
 open_file.close()
+
+single_image = []
+single_image.append(outcomes_test[3])
 # print(outcomes_test)
 
 test_data = ImageDataset_Class.ImageDataset(outcomes_test, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
-test_dataloader = DataLoader(test_data, batch_size = 4, shuffle = False)
+test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
 
 model = RN.generate_model(10, device)
 model.load_state_dict(torch.load(sys.argv[1]))
@@ -223,3 +231,78 @@ print(f"Predictions: {testing_predictions}")
 print(f'(TP, TN, FP, FN): {testing_results.evaluate_results()}')
 print(f'Accuracy on testing set = {testing_accuracy:.1f}%')
 
+model_path = sys.argv[1]
+
+test_data = ImageDataset_Class.ImageDataset(single_image, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
+test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
+testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions)
+
+
+import nibabel as nib
+
+layer = 'conv1'
+model = RN.generate_model(10, device)
+model.load_state_dict(torch.load(model_path))
+model = medcam.inject(model, output_dir="medcam_test", 
+    save_maps=True, layer=layer, replace=True)
+#print(medcam.get_layers(model))
+model.eval()
+image, label, pid = next(iter(test_dataloader))
+filename = pid[0][0]
+image = image[None].to(device, torch.float)
+attn = model(image)
+
+attn = np.squeeze(attn.cpu().numpy())
+img = np.squeeze(image.cpu().numpy())
+print(img.shape, attn.shape)
+slice_num = 80
+fig, ax = plt.subplots(1,1, figsize=(10,10))
+img1 = nib.Nifti1Image(img, np.eye(4))
+img2 = nib.Nifti1Image(attn, np.eye(4))
+img1.header.get_xyzt_units()
+img1.to_filename("img0.nii")
+img2.header.get_xyzt_units()
+img2.to_filename("attn0.nii")
+im = img[..., slice_num]
+attn = attn[..., slice_num]
+print(pid)
+print(attn.max(), attn.min())
+ax.imshow(im, cmap='gray')
+ax.imshow(attn, cmap='jet', alpha=0.5)
+filename="./test0.png"
+fig.savefig(filename)
+
+
+for i in range(5):
+  layer = f'layer{i+1}'
+  model = RN.generate_model(10, device)
+  model.load_state_dict(torch.load(model_path))
+  model = medcam.inject(model, output_dir="medcam_test", 
+      save_maps=True, layer=layer, replace=True)
+  #print(medcam.get_layers(model))
+  model.eval()
+  image, label, pid = next(iter(test_dataloader))
+  filename = pid[0][0]
+  image = image[None].to(device, torch.float)
+  attn = model(image)
+
+  attn = np.squeeze(attn.cpu().numpy())
+  img = np.squeeze(image.cpu().numpy())
+  print(img.shape, attn.shape)
+  slice_num = 80
+  fig, ax = plt.subplots(1,1, figsize=(10,10))
+  img1 = nib.Nifti1Image(img, np.eye(4))
+  img2 = nib.Nifti1Image(attn, np.eye(4))
+  img1.header.get_xyzt_units()
+  img1.to_filename(f"img{i+1}.nii")
+  img2.header.get_xyzt_units()
+  img2.to_filename(f"attn{i+1}.nii")
+  im = img[..., slice_num]
+  attn = attn[..., slice_num]
+  print(pid)
+  print(attn.max(), attn.min())
+  ax.imshow(im, cmap='gray')
+  ax.imshow(attn, cmap='jet', alpha=0.5)
+  filename=f"./test{i+1}.png"
+  fig.savefig(filename)
+  

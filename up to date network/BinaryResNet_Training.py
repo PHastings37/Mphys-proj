@@ -285,7 +285,7 @@ for epoch in range(num_epochs):
     conf_mat = epoch_results.confusion_matrix()
     print(f'(TP, TN, FP, FN): {epoch_results.evaluate_results()}')
     # print(type(conf_mat))
-    if (epoch+1)%1 == 0:
+    if (epoch+1)%5 == 0:
       writer.plot_confusion_matrix(conf_mat, ["alive","dead"])
       save_loss_plots(test_run)
 
