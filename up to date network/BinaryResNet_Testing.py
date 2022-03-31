@@ -107,7 +107,7 @@ def window_and_level(image, level = -600, window = 1500) :
   return wld
 
 class ImageDataset(Dataset) :
-  def __init__(self, annotations, img_dir, transform = transform, target_transform = None, shift_augment = True, rotate_augment = True, scale_augment = True, flip_augment = True) :
+  def __init__(self, annotations, img_dir, transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False) :
     self.img_labels = annotations
     self.img_dir = img_dir
     self.transform = transform

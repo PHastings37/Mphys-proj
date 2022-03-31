@@ -28,7 +28,7 @@ class customWriter(SummaryWriter):
         self.val_loss = []
         self.class_loss = {n: [] for n in range(num_classes+1)}
         self.test_run = test_run
-        print(f"log ={log_dir}")
+        
     
     @staticmethod
     def sigmoid(x):
@@ -75,8 +75,7 @@ class customWriter(SummaryWriter):
         #function taken from https://towardsdatascience.com/exploring-confusion-matrix-evolution-on-tensorboard-e66b39f4ac12
         if self.test_run == True:
             return
-
-        print(type(cm))
+        
         figure = plt.figure(figsize=(8,8))
         plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
         plt.title("Confusion Matrix")
@@ -98,6 +97,7 @@ class customWriter(SummaryWriter):
         plt.tight_layout()
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
+        self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
       
 
     def plot_histogram(self, tag, prediction):

@@ -242,10 +242,10 @@ patient = ""
 import glob
 import shutil
 writer = customWriter(project_folder, 4, 0, 1, test_run)
-
-list_of_files = glob.glob("runs/*")
-latest_file = max(list_of_files, key=os.path.getctime)
-shutil.rmtree(f"{latest_file}")
+if test_run == True:
+    list_of_files = glob.glob("runs/*")
+    latest_file = max(list_of_files, key=os.path.getctime)
+    shutil.rmtree(f"{latest_file}")
 
 writer.epoch = 0
 n_total_steps = len(train_dataloader)
@@ -285,7 +285,7 @@ for epoch in range(num_epochs):
     conf_mat = epoch_results.confusion_matrix()
     print(f'(TP, TN, FP, FN): {epoch_results.evaluate_results()}')
     # print(type(conf_mat))
-    if (epoch+1)%5 == 0:
+    if (epoch+1)%1 == 0:
       writer.plot_confusion_matrix(conf_mat, ["alive","dead"])
       save_loss_plots(test_run)
 
