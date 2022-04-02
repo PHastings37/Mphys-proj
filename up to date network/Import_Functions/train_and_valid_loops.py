@@ -16,7 +16,7 @@ def training_loop(epoch, model, train_dataloader, device, writer, criterion, opt
     model.train()
 
     for i, (images, labels, patient) in enumerate(train_dataloader):
-        images = reshape(images, (images.shape[0], 1, 160,160,160))
+        images = reshape(images, (images.shape[0], 1, 180,180,180))
         images = images.float()
         
         #writer.plot_batch(labels[i], images[i])
@@ -79,7 +79,7 @@ def validation_loop(epoch, model, validation_dataloader, device, criterion, epoc
         n_valid_correct = 0
         n_valid_samples = 0
         for images, labels, patient in validation_dataloader :
-            images = reshape(images, (images.shape[0],1 ,160,160,160))
+            images = reshape(images, (images.shape[0],1 ,180,180,180))
             images = images.float()
             hot_labels = convert_to_one_hot_labels(images, labels)
 

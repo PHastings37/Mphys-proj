@@ -103,7 +103,7 @@ transform = transforms.Compose(
     [transforms.ToTensor()] #added 13/12/2021 to normalize the inputs. THIS NORMALIZES to mean = 0 and std = 1
 )
 
-def window_and_level(image, level = -600, window = 1500) :
+def window_and_level(image, level = -400, window = 5000) :
   maxval = level + window/2
   minval = level - window/2
   wld = np.clip(image, minval, maxval)
@@ -142,7 +142,7 @@ class ImageDataset(Dataset) :
       # pad for shifting into
       image = np.pad(image, pad_width=((mx_x,mx_x),(mx_yz,mx_yz),(mx_yz,mx_yz)), mode='constant', constant_values=-1024) # original is zero but appears to work better with -1024 (HU of air)
       # crop to complete shift
-      image = image[mx_x+cc_shift:160+mx_x+cc_shift, mx_yz+ap_shift:160+mx_yz+ap_shift, mx_yz+lr_shift:160+mx_yz+lr_shift]
+      image = image[mx_x+cc_shift:180+mx_x+cc_shift, mx_yz+ap_shift:180+mx_yz+ap_shift, mx_yz+lr_shift:180+mx_yz+lr_shift]
 
     if self.rotations and random.random() < 0.5 : # normal is 0.5
       roll_angle = np.clip(np.random.normal(loc=0,scale=3), -15, 15)
@@ -214,7 +214,7 @@ single_image = []
 single_image.append(outcomes_test[3])
 # print(outcomes_test)
 
-test_data = ImageDataset_Class.ImageDataset(outcomes_test, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
+test_data = ImageDataset_Class.ImageDataset(outcomes_test, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
 test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
 
 model = RN.generate_model(10, device)
@@ -233,76 +233,28 @@ print(f'Accuracy on testing set = {testing_accuracy:.1f}%')
 
 model_path = sys.argv[1]
 
-test_data = ImageDataset_Class.ImageDataset(single_image, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
+test_data = ImageDataset_Class.ImageDataset(single_image, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
 test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
 testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions)
 
 
-import nibabel as nib
 
-layer = 'conv1'
-model = RN.generate_model(10, device)
-model.load_state_dict(torch.load(model_path))
-model = medcam.inject(model, output_dir="medcam_test", 
-    save_maps=True, layer=layer, replace=True)
-#print(medcam.get_layers(model))
-model.eval()
-image, label, pid = next(iter(test_dataloader))
-filename = pid[0][0]
-image = image[None].to(device, torch.float)
-attn = model(image)
-
-attn = np.squeeze(attn.cpu().numpy())
-img = np.squeeze(image.cpu().numpy())
-print(img.shape, attn.shape)
-slice_num = 80
-fig, ax = plt.subplots(1,1, figsize=(10,10))
-img1 = nib.Nifti1Image(img, np.eye(4))
-img2 = nib.Nifti1Image(attn, np.eye(4))
-img1.header.get_xyzt_units()
-img1.to_filename("img0.nii")
-img2.header.get_xyzt_units()
-img2.to_filename("attn0.nii")
-im = img[..., slice_num]
-attn = attn[..., slice_num]
-print(pid)
-print(attn.max(), attn.min())
-ax.imshow(im, cmap='gray')
-ax.imshow(attn, cmap='jet', alpha=0.5)
-filename="./test0.png"
-fig.savefig(filename)
-
+writer = customWriter(project_folder, 4, 0, 1, False)
 
 for i in range(5):
-  layer = f'layer{i+1}'
-  model = RN.generate_model(10, device)
+  layer = f'layer{i}'
   model.load_state_dict(torch.load(model_path))
   model = medcam.inject(model, output_dir="medcam_test", 
-      save_maps=True, layer=layer, replace=True)
+        save_maps=True, layer=layer, replace=True)
   #print(medcam.get_layers(model))
   model.eval()
-  image, label, pid = next(iter(test_dataloader))
-  filename = pid[0][0]
-  image = image[None].to(device, torch.float)
-  attn = model(image)
+  writer.plot_gradcam(layer, test_dataloader, model_path, model, device)
 
-  attn = np.squeeze(attn.cpu().numpy())
-  img = np.squeeze(image.cpu().numpy())
-  print(img.shape, attn.shape)
-  slice_num = 80
-  fig, ax = plt.subplots(1,1, figsize=(10,10))
-  img1 = nib.Nifti1Image(img, np.eye(4))
-  img2 = nib.Nifti1Image(attn, np.eye(4))
-  img1.header.get_xyzt_units()
-  img1.to_filename(f"img{i+1}.nii")
-  img2.header.get_xyzt_units()
-  img2.to_filename(f"attn{i+1}.nii")
-  im = img[..., slice_num]
-  attn = attn[..., slice_num]
-  print(pid)
-  print(attn.max(), attn.min())
-  ax.imshow(im, cmap='gray')
-  ax.imshow(attn, cmap='jet', alpha=0.5)
-  filename=f"./test{i+1}.png"
-  fig.savefig(filename)
+
+
+
+
+
+
+ 
   

@@ -228,14 +228,14 @@ open_file = open("testing_data_list.pkl", "wb")
 pickle.dump(outcomes_test, open_file)
 open_file.close()
 
-training_data = ImageDataset_Class.ImageDataset(outcomes_train, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = True, rotate_augment = True, scale_augment = True, flip_augment = True)
-validation_data = ImageDataset_Class.ImageDataset(outcomes_validate, os.path.join(project_folder, "textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
+training_data = ImageDataset_Class.ImageDataset(outcomes_train, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = True, rotate_augment = True, scale_augment = True, flip_augment = True)
+validation_data = ImageDataset_Class.ImageDataset(outcomes_validate, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
 
 
 train_dataloader = DataLoader(training_data, batch_size = 4, shuffle = True)
 validation_dataloader = DataLoader(validation_data, batch_size = 4, shuffle = True)
 
-summary(model, (1,160,160,160), batch_size = 4)
+summary(model, (1,180,180,180), batch_size = 4)
 patient = ""
 
 #============================ TRAINING AND VALIDATION LOOP ==========
@@ -269,15 +269,15 @@ for epoch in range(num_epochs):
     epoch_average_validation_loss = Loops.validation_loop(epoch, model, validation_dataloader, device, criterion, epoch_validation_targets, 
     epoch_validation_predictions, writer, test_run)
     avg_valid_loss = np.append(avg_valid_loss, epoch_average_validation_loss)
-    if epoch_average_validation_loss < minimum_average_validation_loss and test_run==False:
-      if current_best_epoch != 0 :
-          os.remove(f'{network_filepath}_epoch{current_best_epoch}')
 
+    if epoch_average_validation_loss < minimum_average_validation_loss and test_run==False:
+      #if current_best_epoch != 0 :
+          #os.remove(f'{network_filepath}_epoch{current_best_epoch}')
       current_best_epoch = epoch+1
       minumum_average_validation_loss = epoch_average_validation_loss
       torch.save(model.state_dict(), f'{network_filepath}_epoch{epoch+1}')
-
       epoch_save_number = epoch+1
+      
     scheduler.step(avg_valid_loss[epoch])
     # print(f"epoch_validation_targets = {epoch_validation_targets}")
     # print(f"epoch_validation_predictions = {epoch_validation_predictions}")

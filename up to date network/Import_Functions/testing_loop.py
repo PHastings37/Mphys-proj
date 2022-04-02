@@ -78,18 +78,18 @@ def testing_loop(model, test_dataloader, device, testing_targets, testing_predic
     counter = 0
     for images, labels, patient in test_dataloader :
       
-      fig, ax = plt.subplots(1,1, figsize=(10,10))
-      slice_num = 80
-      im = images[0,:,:,:]
-      im = im[..., slice_num]
-      ax.imshow(im, cmap='gray')
-      filename="initest.png"
-      fig.savefig(filename)
-      
+      # fig, ax = plt.subplots(1,1, figsize=(10,10))
+      # slice_num = 80
+      # im = images[0,:,:,:]
+      # im = im[..., slice_num]
+      # ax.imshow(im, cmap='gray')
+      # filename="initest.png"
+      # fig.savefig(filename)
       # counter+=1
+      print(images.shape)
       print('===================')
       print(f'patient={patient}')
-      images = images = reshape(images, (images.shape[0],1,160,160,160))
+      images = reshape(images, (images.shape[0],1,180,180,180))
       images = images.float()
       hot_labels = convert_to_one_hot_labels(images, labels)
 

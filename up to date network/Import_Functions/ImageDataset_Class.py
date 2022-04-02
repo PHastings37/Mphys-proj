@@ -63,7 +63,7 @@ class ImageDataset(Dataset) :
       # pad for shifting into
       image = np.pad(image, pad_width=((mx_x,mx_x),(mx_yz,mx_yz),(mx_yz,mx_yz)), mode='constant', constant_values=-1024) # original is zero but appears to work better with -1024 (HU of air)
       # crop to complete shift
-      image = image[mx_x+cc_shift:160+mx_x+cc_shift, mx_yz+ap_shift:160+mx_yz+ap_shift, mx_yz+lr_shift:160+mx_yz+lr_shift]
+      image = image[mx_x+cc_shift:180+mx_x+cc_shift, mx_yz+ap_shift:180+mx_yz+ap_shift, mx_yz+lr_shift:180+mx_yz+lr_shift]
 
     if self.rotations and random.random() < 0.5 : # normal is 0.5
       roll_angle = np.clip(np.random.normal(loc=0,scale=3), -15, 15)

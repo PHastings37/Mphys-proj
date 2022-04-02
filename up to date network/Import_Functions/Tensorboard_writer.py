@@ -16,6 +16,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import itertools
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from medcam import medcam
+import nibabel as nib
+from torch.utils.data import DataLoader
 
 class customWriter(SummaryWriter):
     def __init__(self, log_dir, batch_size, epoch, num_classes, test_run):
@@ -99,6 +104,36 @@ class customWriter(SummaryWriter):
         plt.xlabel('Predicted label')
         self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
       
+
+    def plot_gradcam(self, layer, test_dataloader, model_path, model, device):
+        print(f"layer{layer}")
+        image, label, pid = next(iter(test_dataloader))
+        filename = pid[0][0]
+        image = image[None].to(device, torch.float)
+        attn = model(image)
+
+        attn = np.squeeze(attn.cpu().numpy())
+        img = np.squeeze(image.cpu().numpy())
+        print(img.shape, attn.shape)
+        slice_num = 80
+
+        fig, ax = plt.subplots(1,1, figsize=(10,10))
+        img1 = nib.Nifti1Image(img, np.eye(4))
+        img2 = nib.Nifti1Image(attn, np.eye(4))
+        img1.header.get_xyzt_units()
+        img1.to_filename(f"{layer}_mask.nii")
+        img2.header.get_xyzt_units()
+        img2.to_filename(f"{layer}_attn.nii")
+        im = img[..., slice_num]
+        attn = attn[..., slice_num]
+
+        print(pid)
+        print(attn.max(), attn.min())
+        ax.imshow(im, cmap='gray')
+        ax.imshow(attn, cmap='jet', alpha=0.5)
+        filename="./test0.png"
+        fig.savefig(filename)   
+        self.add_figure(f"{layer}_{pid}", fig)
 
     def plot_histogram(self, tag, prediction):
         if self.test_run == True:

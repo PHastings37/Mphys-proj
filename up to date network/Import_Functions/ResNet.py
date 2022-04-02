@@ -121,7 +121,7 @@ class ResNet(nn.Module):
         self.in_planes = block_inplanes[0]
         self.no_max_pool = no_max_pool
 
-        self.conv1 = nn.Conv3d(n_input_channels,
+        self.layer0 = nn.Conv3d(n_input_channels,
                                self.in_planes,
                                kernel_size=(conv1_t_size, 7, 7),
                                stride=(2, 2, 2),
@@ -199,7 +199,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
+        x = self.layer0(x)
         x = self.bn1(x)
         x = self.relu(x)
         if not self.no_max_pool:
