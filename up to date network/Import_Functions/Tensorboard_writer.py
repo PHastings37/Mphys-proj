@@ -104,36 +104,73 @@ class customWriter(SummaryWriter):
         plt.xlabel('Predicted label')
         self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
       
+   
+    def plot_gradcam(self, image, pid, label, model_path, model, device, guess_status):
+        import time
+        from os.path import exists
+        from os import mkdir
 
-    def plot_gradcam(self, layer, test_dataloader, model_path, model, device):
-        print(f"layer{layer}")
-        image, label, pid = next(iter(test_dataloader))
-        filename = pid[0][0]
-        image = image[None].to(device, torch.float)
-        attn = model(image)
+        plot_date = time.strftime("%Y_%m_%d")
+        plot_time = time.strftime("%H_%M")
+        if exists(f"grad_cam_saves/{plot_date}/{plot_time}"):
+            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
+        elif exists(f"grad_cam_saves/{plot_date}"):
+            mkdir(f"grad_cam_saves/{plot_date}/{plot_time}")
+            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
+        else:
+            mkdir(f"grad_cam_saves/{plot_date}/{plot_time}")
+            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
+            
+            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
 
-        attn = np.squeeze(attn.cpu().numpy())
-        img = np.squeeze(image.cpu().numpy())
-        print(img.shape, attn.shape)
-        slice_num = 80
+        for i in range(1):
+            #loads the final model state
+            layer = f'layer{i}'
+            model.load_state_dict(torch.load(model_path))
+            model = medcam.inject(model, output_dir="medcam_test", 
+            save_maps=True, layer=layer, replace=True)
+            model.eval()
 
-        fig, ax = plt.subplots(1,1, figsize=(10,10))
-        img1 = nib.Nifti1Image(img, np.eye(4))
-        img2 = nib.Nifti1Image(attn, np.eye(4))
-        img1.header.get_xyzt_units()
-        img1.to_filename(f"{layer}_mask.nii")
-        img2.header.get_xyzt_units()
-        img2.to_filename(f"{layer}_attn.nii")
-        im = img[..., slice_num]
-        attn = attn[..., slice_num]
+            #generates the attn map
+            print(f"layer{i}")
+            # filename=pid[0][0]
+            # print(filename)
+            image_layer = image[None].to(device, torch.float)
+            #print(image_layer.shape)
+            attn = model(image_layer)
+            attn = np.squeeze(attn.cpu().numpy())
+            img = np.squeeze(image_layer.cpu().numpy())
+            slice_num = 80
+            #can change this to slice with the highest activation at some point
 
-        print(pid)
-        print(attn.max(), attn.min())
-        ax.imshow(im, cmap='gray')
-        ax.imshow(attn, cmap='jet', alpha=0.5)
-        filename="./test0.png"
-        fig.savefig(filename)   
-        self.add_figure(f"{layer}_{pid}", fig)
+            
+            #saves the img and attn map for the layer
+            img1 = nib.Nifti1Image(img, np.eye(4))
+            img2 = nib.Nifti1Image(attn, np.eye(4))
+            img1.header.get_xyzt_units()
+            img1.to_filename(f"{cam_save_path}/{pid[0][0]}_layer{i}_mask.nii")
+            img2.header.get_xyzt_units()
+            img2.to_filename(f"{cam_save_path}/{pid[0][0]}_layer{i}_attn.nii")
+                
+
+            #creates the tb image
+            fig, ax = plt.subplots(1,1, figsize=(10,10))
+            plt.title(f"{pid[0][0]}_layer{i} GradCam")
+            im = img[..., slice_num]
+            attn = attn[..., slice_num]
+            print(pid[0][0])
+            print(attn.max(), attn.min())
+            ax.imshow(im, cmap='gray')
+            ax.imshow(attn, cmap='jet', alpha=0.4) 
+
+            t = ax.text(0,0, f"{guess_status} Guess", bbox=dict(boxstyle="square", fc="white", ec="black", lw=2))
+            bb = t.get_bbox_patch
+            
+
+            #fig.colorbar(ax)
+            self.add_figure(f"gc_{pid[0][0]}_layer{i}", fig)
+
+        
 
     def plot_histogram(self, tag, prediction):
         if self.test_run == True:

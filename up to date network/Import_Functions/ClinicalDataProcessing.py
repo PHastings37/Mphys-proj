@@ -142,6 +142,7 @@ def create_final_datasets(train_patients_dead, train_patients_alive,
     outcomes_test = test_patients_dead + test_patients_alive
     outcomes_validate = validate_patients_dead + validate_patients_alive
     
+    random.seed(4)
     random.shuffle(outcomes_train)
     random.shuffle(outcomes_test)
     random.shuffle(outcomes_validate)

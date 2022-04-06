@@ -84,6 +84,8 @@ project_folder = "/home/ptrickhastings37_gmail_com/data/rory_and_pat_data/"
 clinical_data_filename = "382_metadata.csv"
 print(f"Clinical data filepath: {os.path.join(project_folder, clinical_data_filename)}")
 
+writer = customWriter(project_folder, 4, 0, 1, False)
+
 #Defining some functions and classes
 def convert_to_one_hot_labels(images, labels) :
     """
@@ -210,6 +212,8 @@ open_file = open("testing_data_list.pkl", "rb")
 outcomes_test = pickle.load(open_file)
 open_file.close()
 
+model_path = sys.argv[1]
+
 single_image = []
 single_image.append(outcomes_test[3])
 # print(outcomes_test)
@@ -223,7 +227,7 @@ model.load_state_dict(torch.load(sys.argv[1]))
 # print("were here")
 testing_targets = []
 testing_predictions = []
-testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions)
+testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path)
 
 testing_results = results(testing_targets, testing_predictions)
 print(f"Targets: {testing_targets}")
@@ -231,24 +235,15 @@ print(f"Predictions: {testing_predictions}")
 print(f'(TP, TN, FP, FN): {testing_results.evaluate_results()}')
 print(f'Accuracy on testing set = {testing_accuracy:.1f}%')
 
-model_path = sys.argv[1]
-
-test_data = ImageDataset_Class.ImageDataset(single_image, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
-test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
-testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions)
+# test_data = ImageDataset_Class.ImageDataset(single_image, os.path.join(project_folder, "CTV_textured_masks"), transform = transform, target_transform = None, shift_augment = False, rotate_augment = False, scale_augment = False, flip_augment = False)
+# test_dataloader = DataLoader(test_data, batch_size = 1, shuffle = False)
+# testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path)
 
 
 
-writer = customWriter(project_folder, 4, 0, 1, False)
 
-for i in range(5):
-  layer = f'layer{i}'
-  model.load_state_dict(torch.load(model_path))
-  model = medcam.inject(model, output_dir="medcam_test", 
-        save_maps=True, layer=layer, replace=True)
-  #print(medcam.get_layers(model))
-  model.eval()
-  writer.plot_gradcam(layer, test_dataloader, model_path, model, device)
+
+
 
 
 

@@ -22,80 +22,44 @@ def convert_to_one_hot_labels(images, labels) :
             hot_labels[index, 1] = 1 
     return hot_labels
 
-# def testing_loop(model, test_dataloader, device, testing_targets, testing_predictions):
-#   print("---- Currently testing the network on unseen data ----")
-#   model.eval()
+def grad_cam_write(model, index, model_path, test_dataloader, writer, medcam, device):
 
-#   with torch.no_grad():
-#     n_correct = 0
-#     n_samples = 0
-#     counter = 0
-#     for images, labels in test_dataloader :
-#         # counter+=1
-#         # print(counter)
-#         images = reshape(images, (images.shape[0],1 ,160,160,160))
-#         images = images.float()
-#         hot_labels = convert_to_one_hot_labels(images, labels)
+    layer = f'layer{index}'
+    model.load_state_dict(torch.load(model_path))
+    model = medcam.inject(model, output_dir="medcam_test", 
+    save_maps=True, layer=layer, replace=True)
+    #print(medcam.get_layers(model))
+    model.eval()
+    
 
-#         images = images.to(device)
-#         hot_labels = hot_labels.to(device)
-#         outputs = model(images)
-#         # max returns (value, index) 
-#         _,predictions = torch.max(outputs, 1)
-#         _,targets = torch.max(hot_labels,1)
-#         #print(f'predictions: {predictions}')
-#         #print(f'targets: {targets}')
-#         n_samples += hot_labels.shape[0]
-#         n_correct += (predictions == targets).sum().item()
-#         #print(f'n_correct = {n_correct}. n_samples = {n_samples}')
 
-#         labels_numpy = labels.numpy()
-#         # print(f"labels_numpy = {labels_numpy}")
-
-#         for index in range(labels_numpy.size) :
-#             testing_targets.append(labels_numpy[index])
-        
-#             # print(f"epoch_validation_targets = {epoch_validation_targets}")
-
-#         predictions_numpy = predictions.cpu().numpy()
-#         for index in range(predictions_numpy.size) :
-#             testing_predictions.append(predictions_numpy[index])
-
-#     acc = (100*n_correct)/n_samples
-
-#     return acc
-
-def testing_loop(model, test_dataloader, device, testing_targets, testing_predictions):
+def testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path):
   print("---- Currently testing the network on unseen data ----")
   model.eval()
   import nibabel as nib
   import numpy as np
   import matplotlib.pyplot as plt
+  from pytorch_grad_cam import GradCAM
+  from pytorch_grad_cam.utils.image import show_cam_on_image
+  from medcam import medcam
 
   with torch.no_grad():
     n_correct = 0
     n_samples = 0
     counter = 0
-    for images, labels, patient in test_dataloader :
+    for images, labels, patients in test_dataloader :
       
-      # fig, ax = plt.subplots(1,1, figsize=(10,10))
-      # slice_num = 80
-      # im = images[0,:,:,:]
-      # im = im[..., slice_num]
-      # ax.imshow(im, cmap='gray')
-      # filename="initest.png"
-      # fig.savefig(filename)
-      # counter+=1
       print(images.shape)
       print('===================')
-      print(f'patient={patient}')
-      images = reshape(images, (images.shape[0],1,180,180,180))
-      images = images.float()
-      hot_labels = convert_to_one_hot_labels(images, labels)
+      print(f'patient={patients[0][0]}')
 
-      images = images.to(device)
+      image = reshape(images, (images.shape[0],1,180,180,180))
+      image = image.float()
+      hot_labels = convert_to_one_hot_labels(image, labels)
+
+      image = image.to(device)
       hot_labels = hot_labels.to(device)
-      outputs = model(images)
+      outputs = model(image)
       # max returns (value, index) 
       _,predictions = torch.max(outputs, 1)
       _,targets = torch.max(hot_labels,1)
@@ -113,8 +77,17 @@ def testing_loop(model, test_dataloader, device, testing_targets, testing_predic
             testing_targets.append(labels_numpy[index])
 
       predictions_numpy = predictions.cpu().numpy()
+
       for index in range(predictions_numpy.size) :
             testing_predictions.append(predictions_numpy[index])
+      if predictions == targets:
+        guess_status = "Correct"
+      else:
+        guess_status = "Incorrect"
+      writer.plot_gradcam(images, patients, labels, model_path, model, device, guess_status)
+      acc = (100*n_correct)/n_samples
+     
     
-    acc = (100*n_correct)/n_samples
+      
+    
     return acc

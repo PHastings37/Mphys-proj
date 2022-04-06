@@ -16,7 +16,7 @@ transform = transforms.Compose(
     [transforms.ToTensor() ] #added 13/12/2021 to normalize the inputs. THIS NORMALIZES to mean = 0 and std = 1
 )
 
-def window_and_level(image, level = -400, window = 5000) :
+def window_and_level(image, level = 0, window = 400) :
   maxval = level + window/2
   minval = level - window/2
   wld = np.clip(image, minval, maxval)
