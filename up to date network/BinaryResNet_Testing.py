@@ -227,7 +227,21 @@ model.load_state_dict(torch.load(sys.argv[1]))
 # print("were here")
 testing_targets = []
 testing_predictions = []
-testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path)
+plot_date = time.strftime("%Y_%m_%d")
+plot_time = time.strftime("%H_%M")
+if os.path.exists(f"grad_cam_saves/{plot_date}"):
+    cam_save_path = f"grad_cam_saves/{plot_date}"
+else:
+    os.mkdir(f"grad_cam_saves/{plot_date}")
+    cam_save_path = f"grad_cam_saves/{plot_date}"
+
+if os.path.exists(f"grad_cam_saves/{plot_date}/{plot_time}"):
+    cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
+else:
+    os.mkdir(f"grad_cam_saves/{plot_date}/{plot_time}")
+    cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
+
+testing_accuracy = loop.testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path, cam_save_path)
 
 testing_results = results(testing_targets, testing_predictions)
 print(f"Targets: {testing_targets}")

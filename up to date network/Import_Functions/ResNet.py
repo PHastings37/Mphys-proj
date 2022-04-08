@@ -152,7 +152,9 @@ class ResNet(nn.Module):
 
         self.fc = nn.Linear(block_inplanes[3] * block.expansion, n_classes)
 
+        
         self.layer5 = nn.Conv3d(block_inplanes[3] * block.expansion, n_classes, 1, 1)
+        #self.layer6 = nn.Conv3d(128, n_classes, 1, 1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -202,14 +204,16 @@ class ResNet(nn.Module):
         x = self.layer0(x)
         x = self.bn1(x)
         x = self.relu(x)
-        if not self.no_max_pool:
-            x = self.maxpool(x)
-
-        x = self.layer1(x)
+        x = self.maxpool(x)            
+        x = self.layer1(x)   
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
         x = self.layer5(x)
+        #x = nn.BatchNorm3d(500)
+        #x = self.layer6(x)
+        x = self.relu(x)
+        
         x = self.avgpool(x)
 
         x = x.view(x.size(0), -1)

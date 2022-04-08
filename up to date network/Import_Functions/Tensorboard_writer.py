@@ -105,31 +105,14 @@ class customWriter(SummaryWriter):
         self.add_figure(f"Confusion Matrix at epoch {self.epoch}", figure)
       
    
-    def plot_gradcam(self, image, pid, label, model_path, model, device, guess_status):
-        import time
-        from os.path import exists
-        from os import mkdir
-
-        plot_date = time.strftime("%Y_%m_%d")
-        plot_time = time.strftime("%H_%M")
-        if exists(f"grad_cam_saves/{plot_date}/{plot_time}"):
-            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
-        elif exists(f"grad_cam_saves/{plot_date}"):
-            mkdir(f"grad_cam_saves/{plot_date}/{plot_time}")
-            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
-        else:
-            mkdir(f"grad_cam_saves/{plot_date}/{plot_time}")
-            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
-            
-            cam_save_path = f"grad_cam_saves/{plot_date}/{plot_time}"
-
-        for i in range(1):
+    def plot_gradcam(self, image, pid, label, model_path, model, device, guess_status, cam_save_path):
+        for i in range(6):
             #loads the final model state
             layer = f'layer{i}'
             model.load_state_dict(torch.load(model_path))
-            model = medcam.inject(model, output_dir="medcam_test", 
+            x = medcam.inject(model, output_dir="medcam_test", 
             save_maps=True, layer=layer, replace=True)
-            model.eval()
+            x.eval()
 
             #generates the attn map
             print(f"layer{i}")
@@ -137,7 +120,7 @@ class customWriter(SummaryWriter):
             # print(filename)
             image_layer = image[None].to(device, torch.float)
             #print(image_layer.shape)
-            attn = model(image_layer)
+            attn = x(image_layer)
             attn = np.squeeze(attn.cpu().numpy())
             img = np.squeeze(image_layer.cpu().numpy())
             slice_num = 80
@@ -161,13 +144,11 @@ class customWriter(SummaryWriter):
             print(pid[0][0])
             print(attn.max(), attn.min())
             ax.imshow(im, cmap='gray')
-            ax.imshow(attn, cmap='jet', alpha=0.4) 
+            c = ax.imshow(attn, cmap='jet', alpha=0.3) 
 
             t = ax.text(0,0, f"{guess_status} Guess", bbox=dict(boxstyle="square", fc="white", ec="black", lw=2))
             bb = t.get_bbox_patch
-            
-
-            #fig.colorbar(ax)
+            fig.colorbar(c)
             self.add_figure(f"gc_{pid[0][0]}_layer{i}", fig)
 
         

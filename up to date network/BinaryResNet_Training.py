@@ -181,7 +181,8 @@ batch_size = 4
 learning_rate = 0.001
 
 criterion = nn.BCEWithLogitsLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
+#optimizer = torch.optim.Adam(model.parameters(), lr = learning_rate)
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', verbose=True)
 
 #====================================================================

@@ -33,7 +33,7 @@ def grad_cam_write(model, index, model_path, test_dataloader, writer, medcam, de
     
 
 
-def testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path):
+def testing_loop(model, test_dataloader, device, testing_targets, testing_predictions, writer, model_path, cam_save_path):
   print("---- Currently testing the network on unseen data ----")
   model.eval()
   import nibabel as nib
@@ -84,7 +84,7 @@ def testing_loop(model, test_dataloader, device, testing_targets, testing_predic
         guess_status = "Correct"
       else:
         guess_status = "Incorrect"
-      writer.plot_gradcam(images, patients, labels, model_path, model, device, guess_status)
+      writer.plot_gradcam(images, patients, labels, model_path, model, device, guess_status, cam_save_path)
       acc = (100*n_correct)/n_samples
      
     
